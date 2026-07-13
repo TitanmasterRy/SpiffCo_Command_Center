@@ -206,6 +206,15 @@ plus `top_production` (busiest items by average rate). Aggregates the most recen
 `ProductionAnalytics` for one item ({item, name, sample_count, rate `SeriesStats`,
 `trend` `Comparison`}); `404 not_found` if the item has no samples.
 
+## Endpoints (Phase 10 — AI Advisor)
+
+### `GET /api/v1/advisor`
+
+`AdvisorReport`: `findings` ranked by severity (each
+`{id, severity, category, title, explanation, suggestion}`) plus `counts`
+(severity → count). Findings come from rule-based analysis of the live game-state
+and logistics snapshots (power, machines, production, storage, logistics).
+
 ## WebSocket `/ws`
 
 Client → server:

@@ -14,8 +14,8 @@ every step.
 | 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ✅ done (simulated data) |
 | 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ✅ done |
 | 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ✅ done |
-| 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ⬜ next |
-| 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ⬜ |
+| 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ✅ done (rule-based over simulated data) |
+| 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ⬜ next |
 | 12 | **Offline Mode** — save-file reading, planning without a live game | ⬜ |
 
 ## Cross-cutting backlog

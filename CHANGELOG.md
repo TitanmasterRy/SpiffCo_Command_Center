@@ -6,6 +6,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 10: AI Advisor
+
+- Rule-based advisor engine (`app/advisors/engine.py`, pure) that derives ranked,
+  explained findings from the live snapshots: power shortfall / low headroom /
+  draining battery, unpowered machines, factory outages/underperformance,
+  production shortages, storage backing up, and logistics over-capacity. Each
+  finding carries a severity, a plain-language explanation, and a suggested fix.
+- `GET /api/v1/advisor` returns the ranked `AdvisorReport` (findings +
+  per-severity counts), assembled from the game-state and logistics services.
+- Advisor page (`pages/Advisor.tsx`, route `/advisor`, new sidebar entry):
+  findings grouped by severity with category icons, explanations, and suggested
+  fixes; severity grouping is pure (`utils/advisorView.ts`, unit-tested).
+
 ### Added — Phase 9: Analytics
 
 - Pure analytics math (`app/analytics/compute.py`): series statistics

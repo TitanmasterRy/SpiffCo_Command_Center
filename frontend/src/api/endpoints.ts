@@ -16,6 +16,7 @@ import type {
   BlueprintSummary,
   BlueprintUpdate,
 } from '../types/blueprint';
+import type { AdvisorReport } from '../types/advisor';
 import type { AnalyticsSummary, ProductionAnalytics } from '../types/analytics';
 import type { LogisticsSnapshot, TransportData } from '../types/logistics';
 import type { PowerBuildingInfo, PowerReport } from '../types/power';
@@ -74,6 +75,9 @@ export const api = {
       apiFetch<ProductionAnalytics>(
         `/api/v1/analytics/production/${encodeURIComponent(item)}?limit=${limit}`,
       ),
+  },
+  advisor: {
+    report: () => apiFetch<AdvisorReport>('/api/v1/advisor'),
   },
   production: {
     plan: (request: ProductionRequest) =>

@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import FactoryPlanner from './pages/FactoryPlanner';
+import Advisor from './pages/Advisor';
 import Analytics from './pages/Analytics';
 import Blueprints from './pages/Blueprints';
 import Logistics from './pages/Logistics';
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: 'trains', element: <Logistics /> },
       { path: 'blueprints', element: <Blueprints /> },
       { path: 'analytics', element: <Analytics /> },
+      { path: 'advisor', element: <Advisor /> },
       { path: 'settings', element: <Settings /> },
     ],
   },

@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 9 complete, Phase 10 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 10 complete, Phase 11 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -221,13 +221,31 @@ tests running through the real ASGI app).
 clean, ruff + mypy clean on new modules; analytics tests seed history through the
 live session factory and assert KPIs/ranking deterministically.
 
+### Phase 10 — AI Advisor
+
+**Backend** (`app/advisors/`, `app/api/v1/advisor.py`)
+- Pure engine (`app/advisors/engine.py`): rules over the live dashboard + logistics
+  snapshots — power shortfall/headroom/battery (reuses `app/power/analysis.py`),
+  unpowered machines, factory outage/underperformance, production shortage
+  (<90% of target), storage backing up (≥95%), logistics over-capacity. Each
+  finding has a severity, explanation, and suggested fix; ranked critical→info.
+- `build_report` (`app/advisors/service.py`) adds per-severity counts. Schema in
+  `app/schemas/advisor.py`; endpoint `GET /api/v1/advisor`.
+
+**Frontend** (`pages/Advisor.tsx`, route `/advisor`, new sidebar entry)
+- Findings grouped by severity with category icons, explanations, and suggested
+  fixes; pure grouping in `utils/advisorView.ts` (unit-tested); `hooks/useAdvisor.ts`.
+
+**Verified end-to-end**: pytest 70/70, vitest 40/40, `tsc`/build clean, ruff +
+mypy clean on new modules, live smoke of the advisor API (simulated state yields
+the over-capacity `Iron Plate Overflow` belt + `3 machines unpowered` warnings).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 10 — AI Advisor | Bottleneck/shortage/starvation detection with explained recommendations |
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
@@ -253,25 +271,30 @@ Dashboard, resource nodes on the World Map.)
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 10 — AI Advisor
+### Primary goal: Phase 11 — FRM Integration
 
-Bottleneck / shortage / starvation detection with explained recommendations. This
-consolidates the ad-hoc rule-based advice already scattered across the app (the
-dashboard alerts, the Power page recommendations, logistics over-capacity flags)
-into one advisor service, and adds production-chain reasoning. Suggested order:
+Replace the simulated providers with a real Ficsit Remote Monitoring connector:
+discovery, health, reconnect, caching, and normalization into the existing
+schemas. The provider interfaces (`GameStateProvider`, `WorldProvider`,
+`LogisticsProvider`) already exist, so this is a drop-in behind them. Suggested
+order:
 
-1. **Advisor engine** (`app/advisors/` — package scaffold exists):
-   - Rule set over the live snapshots (game state, world, logistics, power) +
-     history: starving machines (input < demand), storage backing up (output
-     belt over capacity / storage full), power shortfall, and low uptime.
-   - Each finding carries a severity, a human explanation, and a suggested fix
-     (mirror `PowerRecommendation`). Normalize into `app/schemas/advisor.py`;
-     publish on the reserved `alerts` WS topic.
-   - Endpoint `GET /api/v1/advisor` returning ranked findings.
-2. **Frontend**: an Advisor page (or a prominent dashboard panel) listing findings
-   grouped by severity with explanations and suggested actions.
-3. **Tests**: each detection rule against crafted snapshots (backend); severity
-   grouping/formatting helpers (frontend unit tests).
+1. **FRM client** (`app/connectors/frm/` — interface scaffold exists):
+   - Async HTTP client over the FRM mod's endpoints (`getFactory`, `getPower`,
+     `getPlayer`, `getResourceNode`, `getTrains`, …) at `SPIFFCO_FRM_BASE_URL`,
+     with timeout, health check, and short-TTL caching to avoid hammering the mod.
+   - Normalize raw FRM JSON into the internal schemas (dashboard/world/logistics)
+     — never expose raw FRM shapes past the provider.
+2. **FRM-backed providers** that implement the existing provider protocols; select
+   FRM vs. simulation from settings/health at startup, and **fall back to
+   simulation** when FRM is unreachable (publish `frm.status`).
+3. **Health surface**: reflect FRM connection state in `/health` and the top-bar
+   FRM badge (already present).
+4. **Tests**: normalization from captured FRM fixtures, cache/timeout behavior,
+   and fallback selection (use a fake HTTP transport — no live game required).
+
+Note: full validation needs a live game; build against captured/fixture FRM
+payloads and keep the simulated providers as the default when FRM is absent.
 
 ### Housekeeping (small, high value — carried forward)
 
