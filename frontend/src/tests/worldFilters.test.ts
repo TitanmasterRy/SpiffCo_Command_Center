@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { MapFeature } from '../types/world';
-import { applyWorldFilters, metaOptions, type WorldFilters } from '../utils/worldFilters';
+import {
+  applyWorldFilters,
+  metaOptions,
+  producesOptions,
+  type WorldFilters,
+} from '../utils/worldFilters';
 
 const feature = (partial: Partial<MapFeature>): MapFeature => ({
   id: 'x',
@@ -14,7 +19,7 @@ const feature = (partial: Partial<MapFeature>): MapFeature => ({
 });
 
 const FEATURES: MapFeature[] = [
-  feature({ id: 'f1', type: 'factory', name: 'Iron Works' }),
+  feature({ id: 'f1', type: 'factory', name: 'Iron Works', meta: { produces: 'Iron Plate, Screw' } }),
   feature({
     id: 'n1',
     type: 'resource_node',
@@ -33,7 +38,7 @@ const FEATURES: MapFeature[] = [
     id: 'a1',
     type: 'artifact',
     name: 'Somersloop',
-    meta: { region: 'Grass Fields' },
+    meta: { region: 'Grass Fields', kind: 'somersloop' },
     collected: true,
   }),
 ];
@@ -57,6 +62,8 @@ const DEFAULTS: WorldFilters = {
   resource: 'all',
   purity: 'all',
   nodeStatus: 'all',
+  kind: 'all',
+  produces: 'all',
   region: 'all',
 };
 
@@ -94,6 +101,30 @@ describe('applyWorldFilters', () => {
     expect(applyWorldFilters(FEATURES, { ...DEFAULTS, search: 'iron' })).toHaveLength(2);
     const noNodes = { ...DEFAULTS.visible, resource_node: false };
     expect(applyWorldFilters(FEATURES, { ...DEFAULTS, visible: noNodes })).toHaveLength(2);
+  });
+
+  it('kind filter constrains only pickups', () => {
+    const ids = applyWorldFilters(FEATURES, { ...DEFAULTS, kind: 'somersloop' }).map((f) => f.id);
+    expect(ids).toContain('a1'); // matching pickup kept
+    expect(ids).toEqual(['f1', 'n1', 'n2', 'a1']); // non-pickups pass through
+    expect(
+      applyWorldFilters(FEATURES, { ...DEFAULTS, kind: 'mercer-sphere' }).map((f) => f.id),
+    ).not.toContain('a1'); // non-matching pickup dropped
+  });
+
+  it('produces filter constrains only factories', () => {
+    expect(
+      applyWorldFilters(FEATURES, { ...DEFAULTS, produces: 'Iron Plate' }).map((f) => f.id),
+    ).toContain('f1');
+    expect(
+      applyWorldFilters(FEATURES, { ...DEFAULTS, produces: 'Plastic' }).map((f) => f.id),
+    ).not.toContain('f1'); // factory not producing it is dropped
+  });
+});
+
+describe('producesOptions', () => {
+  it('returns sorted distinct factory output items', () => {
+    expect(producesOptions(FEATURES)).toEqual(['Iron Plate', 'Screw']);
   });
 });
 

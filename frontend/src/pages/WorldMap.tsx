@@ -15,7 +15,7 @@ import { Card } from '../components/Card';
 import { useWorld, useMarkers } from '../hooks/useWorld';
 import type { FeatureType } from '../types/world';
 import { fromLatLng, MAP_IMAGE_BOUNDS, MAP_IMAGE_URL, toLatLng } from '../utils/mapCoords';
-import { applyWorldFilters, metaOptions } from '../utils/worldFilters';
+import { applyWorldFilters, metaOptions, producesOptions } from '../utils/worldFilters';
 
 /**
  * Dark categorical palette (dataviz skill, dark slots) — identity per feature type.
@@ -123,6 +123,8 @@ export default function WorldMap() {
   const [resource, setResource] = useState('all');
   const [purity, setPurity] = useState('all');
   const [nodeStatus, setNodeStatus] = useState<'all' | 'free' | 'occupied'>('all');
+  const [kind, setKind] = useState('all');
+  const [produces, setProduces] = useState('all');
   const [region, setRegion] = useState('all');
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [pendingName, setPendingName] = useState('');
@@ -132,8 +134,30 @@ export default function WorldMap() {
     () => allFeatures.filter((f) => f.type === 'resource_node'),
     [allFeatures],
   );
+  const pickupFeatures = useMemo(
+    () => allFeatures.filter((f) => PICKUP_TYPES.has(f.type)),
+    [allFeatures],
+  );
   const resourceOptions = useMemo(() => metaOptions(nodeFeatures, 'resource'), [nodeFeatures]);
   const regionOptions = useMemo(() => metaOptions(allFeatures, 'region'), [allFeatures]);
+  const kindOptions = useMemo(() => metaOptions(pickupFeatures, 'kind'), [pickupFeatures]);
+  const producesOpts = useMemo(() => producesOptions(allFeatures), [allFeatures]);
+
+  const resetFilters = () => {
+    setSearch('');
+    setHideCollected(false);
+    setResource('all');
+    setPurity('all');
+    setNodeStatus('all');
+    setKind('all');
+    setProduces('all');
+    setRegion('all');
+    setVisible((v) => {
+      const all = { ...v };
+      for (const t of Object.keys(all) as FeatureType[]) all[t] = true;
+      return all;
+    });
+  };
 
   const features = useMemo(
     () =>
@@ -144,9 +168,11 @@ export default function WorldMap() {
         resource,
         purity,
         nodeStatus,
+        kind,
+        produces,
         region,
       }),
-    [allFeatures, visible, search, hideCollected, resource, purity, nodeStatus, region],
+    [allFeatures, visible, search, hideCollected, resource, purity, nodeStatus, kind, produces, region],
   );
 
   if (isLoading || !world) return <p className="text-sm text-slate-500">Loading world…</p>;
@@ -241,6 +267,34 @@ export default function WorldMap() {
               ...regionOptions.map((r) => ({ value: r, label: r })),
             ]}
           />
+          {producesOpts.length > 0 && (
+            <SelectFilter
+              label="Produces"
+              value={produces}
+              onChange={setProduces}
+              options={[
+                { value: 'all', label: 'All' },
+                ...producesOpts.map((p) => ({ value: p, label: p })),
+              ]}
+            />
+          )}
+          {kindOptions.length > 0 && (
+            <SelectFilter
+              label="Pickup kind"
+              value={kind}
+              onChange={setKind}
+              options={[
+                { value: 'all', label: 'All' },
+                ...kindOptions.map((k) => ({ value: k, label: k })),
+              ]}
+            />
+          )}
+          <button
+            onClick={resetFilters}
+            className="rounded-md border border-surface-border bg-surface-raised px-2.5 py-1 text-xs text-slate-400 hover:text-slate-200"
+          >
+            Reset filters
+          </button>
         </div>
         <span className="text-xs text-slate-500">
           Right-click the map to add a marker · hollow = collected / miner installed · a

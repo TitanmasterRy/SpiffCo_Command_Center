@@ -136,6 +136,9 @@ def test_normalize_world_and_logistics() -> None:
     assert world.players[0].name == "Pioneer"
     node = next(f for f in world.features if f.type == "resource_node")
     assert node.occupied is True and node.meta["purity"] == "pure"
+    # Purity is surfaced in the display name; the resource slug stays purity-free.
+    assert node.name == "Iron Ore (Pure)"
+    assert node.meta["resource"] == "iron-ore"
 
 
 def test_normalize_world_buildings_get_unique_ids_and_meta() -> None:

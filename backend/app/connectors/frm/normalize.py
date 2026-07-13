@@ -278,16 +278,19 @@ def normalize_world(
             )
         )
     for node in nodes_raw:
-        name = str(node.get("Name") or node.get("ResourceForm") or "Node")
+        base = str(node.get("Name") or node.get("ResourceForm") or "Node")
         purity = str(node.get("Purity") or "normal").lower()
         occupied = bool(node.get("Exploited") or node.get("Occupied"))
         features.append(
             MapFeature(
-                id=_slug(f"{name}-{node.get('ID', len(features))}"),
+                # Purity is shown in the name (e.g. "Iron Ore (Pure)") and kept in
+                # meta for the purity filter; ``resource`` stays the base slug so
+                # the resource filter still groups nodes regardless of purity.
+                id=_slug(f"{base}-{node.get('ID', len(features))}"),
                 type="resource_node",
-                name=name,
+                name=f"{base} ({purity.capitalize()})",
                 position=_location(node),
-                meta={"resource": _slug(name), "purity": purity},
+                meta={"resource": _slug(base), "purity": purity},
                 occupied=occupied,
             )
         )
