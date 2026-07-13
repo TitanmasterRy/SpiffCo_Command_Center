@@ -6,6 +6,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 7: Power
+
+- Power analysis (`app/power/analysis.py`, pure): grid headroom + status
+  (ok/warn/critical), battery trend (charging/draining/stable) with projected
+  minutes to empty/full from the current net draw, and rule-based
+  recommendations (a Phase 10 advisor precursor).
+- `PowerReport` assembled from the live game-state grid stats plus the persisted
+  `power_samples` history; endpoints `GET /api/v1/power` and
+  `GET /api/v1/gamedata/power` (generator catalog from `power_buildings.json`).
+- Power page (`pages/Power.tsx`, route `/power`): generation/consumption/headroom/
+  battery stat tiles, the shared power-history chart, grid-load + battery meters,
+  and a recommendations list; live grid stats patched from `dashboard.snapshot`
+  WS frames between 15 s refetches.
+
 ### Added — Phase 6: Logistics
 
 - Logistics network model (`app/schemas/logistics.py`): nodes (stations/

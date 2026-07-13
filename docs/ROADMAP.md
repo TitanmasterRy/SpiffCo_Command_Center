@@ -11,8 +11,8 @@ every step.
 | 4 | **Factory Planner** — grid designer, placement, blueprint editor, area planning, import/export, versioning | ✅ done (simulated/static game data) |
 | 5 | **Production Planner** — recipes, clocks, somersloops, alternates, balancing, power calc, shopping lists | ✅ done (static recipe data; seed subset) |
 | 6 | **Logistics** — belts, pipes, trains, trucks, drones, flow visualization, throughput analysis | ✅ done (simulated network) |
-| 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ⬜ next |
-| 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ⬜ |
+| 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ✅ done (simulated data) |
+| 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ⬜ next |
 | 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ⬜ |
 | 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ⬜ |
 | 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ⬜ |

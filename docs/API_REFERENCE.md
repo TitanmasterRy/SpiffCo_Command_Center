@@ -153,6 +153,21 @@ to_node, utilization, over_capacity}` — the last two derived server-side),
 (`route_count`, `node_count`, `over_capacity_routes`, `throughput_by_mode`,
 `max_utilization`).
 
+## Endpoints (Phase 7 — Power)
+
+### `GET /api/v1/gamedata/power`
+
+`PowerBuildingInfo[]` (`{id, name, power_mw, fuel?, fuel_rate?, requires_water,
+water_rate?, capacity_mwh?, max_charge_mw?}`). Static, cached.
+
+### `GET /api/v1/power?history=<n>`
+
+`PowerReport`: live `power` (`PowerStats`), `headroom_mw` / `headroom_percent`,
+`status` (ok|warn|critical), `battery` (`{percent, capacity_mwh, stored_mwh,
+trend, minutes_remaining}`), a `recommendations` list, and recent `history`
+(`PowerHistoryPoint[]`, ≤`history`). Live grid stats also arrive on
+`dashboard.snapshot`.
+
 ## WebSocket `/ws`
 
 Client → server:

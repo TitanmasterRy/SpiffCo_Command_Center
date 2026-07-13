@@ -4,9 +4,10 @@ import Dashboard from './pages/Dashboard';
 import FactoryPlanner from './pages/FactoryPlanner';
 import Logistics from './pages/Logistics';
 import Planner from './pages/Planner';
+import Power from './pages/Power';
 import Settings from './pages/Settings';
 import WorldMap from './pages/WorldMap';
-import { Blueprints, Factories, Power, Resources } from './pages/stubs';
+import { Blueprints, Factories, Resources } from './pages/stubs';
 
 /** Application route table. */
 export const router = createBrowserRouter([

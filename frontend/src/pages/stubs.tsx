@@ -15,16 +15,6 @@ export function Factories() {
   );
 }
 
-export function Power() {
-  return (
-    <PagePlaceholder
-      title="Power"
-      phase="Phase 7"
-      description="Power graph, historical usage, consumption vs. generation, battery backup, and recommendations."
-    />
-  );
-}
-
 export function Resources() {
   return (
     <PagePlaceholder

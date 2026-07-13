@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 6 complete, Phase 7 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 7 complete, Phase 8 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -155,22 +155,42 @@ mypy clean on new modules, live smoke test of the logistics API (7 nodes / 7
 routes / 2 trains, `r-plate-belt` correctly flagged over capacity at 125%, peak
 utilization + per-mode throughput rollups).
 
+### Phase 7 — Power
+
+**Backend** (`app/power/`, `app/api/v1/power.py`, gamedata power endpoint)
+- Pure analysis (`app/power/analysis.py`): headroom + status (ok/warn/critical),
+  battery trend (charging/draining/stable) with projected minutes to empty/full
+  from the current net draw, and rule-based recommendations.
+- `build_report` (`app/power/service.py`) assembles a `PowerReport` from the live
+  game-state grid stats + persisted `power_samples` history. Schemas in
+  `app/schemas/power.py`. Endpoints `GET /api/v1/power`, `GET /gamedata/power`.
+  **Reuses existing tables — no new schema.**
+
+**Frontend** (`pages/Power.tsx`, route `/power`)
+- Generation/consumption/headroom/battery stat tiles, the shared `PowerChart`
+  history, grid-load + battery meters, and a recommendations list. Live grid
+  stats patched from `dashboard.snapshot` WS frames between 15 s refetches
+  (`hooks/usePower.ts`, registered in `AppLayout`); types in `types/power.ts`.
+
+**Verified end-to-end**: pytest 55/55, vitest 31/31, `tsc`/build clean, ruff +
+mypy clean on new modules, live smoke test of the power API (headroom 31%,
+battery charging ~104 min to full, healthy recommendation, generator catalog).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 7 — Power | Power graph page, historical usage, battery analysis, recommendations |
 | 8 — Blueprint System | Library, categories, tags, search, favorites, import/export, statistics |
 | 9 — Analytics | Historical graphs, uptime, comparisons, KPIs |
 | 10 — AI Advisor | Bottleneck/shortage/starvation detection with explained recommendations |
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
-The frontend pages for phases 7–8 (Power, Blueprints) plus Factories and
-Resources exist only as placeholder stubs (`frontend/src/pages/stubs.tsx`); the
-matching backend packages are empty scaffolds.
+The frontend pages for Blueprints (Phase 8), Factories, and Resources exist only
+as placeholder stubs (`frontend/src/pages/stubs.tsx`); the matching backend
+packages are empty scaffolds.
 
 ### Known gaps in shipped code
 
@@ -189,27 +209,26 @@ matching backend packages are empty scaffolds.
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 7 — Power
+### Primary goal: Phase 8 — Blueprint System
 
-A dedicated power page: generation vs. consumption over time, battery/backup
-analysis, and recommendations. The dashboard already samples power history
-(`power_samples`) and computes grid stats; Phase 7 deepens that into its own
-analytics surface. Suggested order:
+A persisted library of reusable blueprints (categories, tags, search, favorites,
+import/export, statistics). This is the first phase since Phase 4 that adds
+**persisted tables**, so it is the natural moment to finally bootstrap Alembic.
+The Factory Planner (Phase 4) already has plan layouts + import/export to mirror.
+Suggested order:
 
-1. **Power model** (`app/power/` — package scaffold exists):
-   - Serve `power_buildings.json` (generators: output MW, fuel, water, capacity)
-     via `GET /gamedata/power` (reuse the `lru_cache` loader pattern).
-   - A `PowerService`/analysis layer over the existing `power_samples` history +
-     live `GameStateService` power stats: generation vs. consumption headroom,
-     battery drain/charge trend, fuse-trip risk, and rule-based recommendations
-     (extend the dashboard's alert style). Normalize into `app/schemas/power.py`.
-   - Reuse the existing `/dashboard/history/power` samples; add a longer-window
-     query if needed. Consider publishing on the reserved `power.grid` WS topic.
-2. **Frontend**: replace the `/power` stub with a Power page — a larger
-   generation/consumption history chart (reuse `PowerChart`/Recharts, dataviz
-   palette), battery gauge, headroom meter, and a recommendations list.
-3. **Tests**: headroom/battery-trend/recommendation math (backend); chart data
-   shaping helpers (frontend unit tests).
+1. **Schemas & persistence** (`app/blueprints/` — package scaffold exists):
+   - `Blueprint` table: id, name, description, category, tags (JSON), favorite,
+     `data` JSON (a reusable layout/recipe fragment — reuse the Phase 4 `Layout`
+     shape or a superset), created/updated. Consider a small stats rollup.
+   - CRUD + filtering (category/tag/favorite/search) + import/export (mirror
+     `app/planner/service.py` patterns). Normalize into `app/schemas/blueprint.py`.
+   - **Bootstrap Alembic now** (overdue since Phase 4) before adding this table.
+2. **Frontend**: replace the `/blueprints` stub with a library page — category/
+   tag filters, search, favorite toggles, a grid/list of cards, import/export,
+   and a small statistics panel (counts by category/tag).
+3. **Tests**: CRUD + filter + import/export roundtrip (backend); filter/sort
+   helpers (frontend unit tests).
 
 ### Housekeeping (small, high value — carried forward)
 

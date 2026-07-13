@@ -10,6 +10,7 @@ import type {
   PlanVersion,
 } from '../types/planner';
 import type { LogisticsSnapshot, TransportData } from '../types/logistics';
+import type { PowerBuildingInfo, PowerReport } from '../types/power';
 import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
 import type { CustomMarker, CustomMarkerIn, WorldSnapshot } from '../types/world';
 import { apiFetch } from './http';
@@ -51,9 +52,13 @@ export const api = {
     recipes: () => apiFetch<RecipeInfo[]>('/api/v1/gamedata/recipes'),
     items: () => apiFetch<ItemInfo[]>('/api/v1/gamedata/items'),
     transport: () => apiFetch<TransportData>('/api/v1/gamedata/transport'),
+    powerBuildings: () => apiFetch<PowerBuildingInfo[]>('/api/v1/gamedata/power'),
   },
   logistics: {
     snapshot: () => apiFetch<LogisticsSnapshot>('/api/v1/logistics'),
+  },
+  power: {
+    report: (history = 120) => apiFetch<PowerReport>(`/api/v1/power?history=${history}`),
   },
   production: {
     plan: (request: ProductionRequest) =>

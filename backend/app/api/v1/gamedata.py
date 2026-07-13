@@ -6,9 +6,11 @@ from fastapi import APIRouter
 
 from app.logistics.data import load_transport
 from app.planner.gamedata import load_buildings
+from app.power.data import load_power_buildings
 from app.production.data import load_items, load_recipes
 from app.schemas.logistics import TransportData
 from app.schemas.planner import BuildingInfo
+from app.schemas.power import PowerBuildingInfo
 from app.schemas.production import ItemInfo, RecipeInfo
 
 router = APIRouter(prefix="/gamedata", tags=["gamedata"])
@@ -36,3 +38,9 @@ async def list_items() -> list[ItemInfo]:
 async def transport() -> TransportData:
     """Belt/pipe tiers and logistics vehicles with their capacities."""
     return load_transport()
+
+
+@router.get("/power", response_model=list[PowerBuildingInfo])
+async def list_power_buildings() -> list[PowerBuildingInfo]:
+    """Generators and power storage with output, fuel, and capacity."""
+    return list(load_power_buildings())

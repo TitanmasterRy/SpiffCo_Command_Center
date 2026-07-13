@@ -6,6 +6,7 @@ from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.gamedata import router as gamedata_router
 from app.api.v1.logistics import router as logistics_router
 from app.api.v1.plans import router as plans_router
+from app.api.v1.power import router as power_router
 from app.api.v1.production import router as production_router
 from app.api.v1.system import router as system_router
 from app.api.v1.world import router as world_router
@@ -18,5 +19,6 @@ api_v1_router.include_router(plans_router)
 api_v1_router.include_router(gamedata_router)
 api_v1_router.include_router(production_router)
 api_v1_router.include_router(logistics_router)
+api_v1_router.include_router(power_router)
 
 __all__ = ["api_v1_router"]
