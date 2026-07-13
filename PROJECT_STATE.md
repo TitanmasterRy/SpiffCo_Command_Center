@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 5 complete, Phase 6 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 6 complete, Phase 7 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -129,13 +129,38 @@ mypy clean on new modules, live smoke test of the production API (recipes/items
 served, reinforced-iron-plate ×10/min solves to the correct 78 MW machine tree
 with raw/cost rollups, alternate-recipe override changes the machine mix).
 
+### Phase 6 — Logistics
+
+**Backend** (`app/logistics/`, `app/simulation/logistics.py`, `app/api/v1/logistics.py`)
+- Schemas (`app/schemas/logistics.py`): `LogisticsNode`, `LogisticsRoute` (with
+  server-derived `utilization` / `over_capacity` computed fields), `TrainInfo`,
+  `LogisticsSummary`, `LogisticsSnapshot`, transport tiers.
+- Transport data (`app/logistics/data.py`, `lru_cache`d) from
+  `transportation.json`; pure analysis (`app/logistics/analysis.py`) rolls up
+  per-mode throughput, peak utilization, and over-capacity routes.
+- `SimulatedLogisticsProvider` (seeded network aligned with the world map; trains
+  ping-pong along the rail line) + `LogisticsService` publishing on WS topic
+  `logistics.trains`; wired into `main.py` lifespan + scheduler.
+- Endpoints: `GET /api/v1/logistics`, `GET /api/v1/gamedata/transport`.
+
+**Frontend** (`pages/Logistics.tsx`, route `/trains`)
+- SVG network schematic (routes colored by a green→amber→red utilization scale,
+  width by throughput, live train markers streamed over WS), summary panel, and a
+  routes table with utilization bars + over-capacity flags. Pure view helpers in
+  `utils/logisticsView.ts` (unit-tested); WS handler in `hooks/useLogistics.ts`
+  registered in `AppLayout`. Sidebar "Train Network" → "Logistics".
+
+**Verified end-to-end**: pytest 50/50, vitest 31/31, `tsc`/build clean, ruff +
+mypy clean on new modules, live smoke test of the logistics API (7 nodes / 7
+routes / 2 trains, `r-plate-belt` correctly flagged over capacity at 125%, peak
+utilization + per-mode throughput rollups).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 6 — Logistics | Belts, pipes, trains, trucks, drones, flow visualization, throughput analysis |
 | 7 — Power | Power graph page, historical usage, battery analysis, recommendations |
 | 8 — Blueprint System | Library, categories, tags, search, favorites, import/export, statistics |
 | 9 — Analytics | Historical graphs, uptime, comparisons, KPIs |
@@ -143,7 +168,9 @@ with raw/cost rollups, alternate-recipe override changes the machine mix).
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
-The frontend pages for phases 6–8 exist only as placeholder stubs (`frontend/src/pages/stubs.tsx`); the matching backend packages are empty scaffolds.
+The frontend pages for phases 7–8 (Power, Blueprints) plus Factories and
+Resources exist only as placeholder stubs (`frontend/src/pages/stubs.tsx`); the
+matching backend packages are empty scaffolds.
 
 ### Known gaps in shipped code
 
@@ -162,28 +189,27 @@ The frontend pages for phases 6–8 exist only as placeholder stubs (`frontend/s
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 6 — Logistics
+### Primary goal: Phase 7 — Power
 
-Visualize and analyze material movement: belts, pipes, trains, trucks, drones.
-The `SimulatedWorldProvider` already places train/drone/truck stations on the
-map; Phase 6 adds the *connections and throughput* layer. Suggested order:
+A dedicated power page: generation vs. consumption over time, battery/backup
+analysis, and recommendations. The dashboard already samples power history
+(`power_samples`) and computes grid stats; Phase 7 deepens that into its own
+analytics surface. Suggested order:
 
-1. **Transport game data**: `database/data/transportation.json` already exists —
-   serve belt/pipe/vehicle tiers (max rates) via a `GET /gamedata/transport`
-   endpoint (reuse the `lru_cache` loader pattern).
-2. **Logistics model** (`app/logistics/` — package scaffold exists):
-   - Normalize a network of nodes (stations/factories) and edges (belt/pipe/
-     train/truck/drone routes) with a carried item + throughput; simulate or
-     seed a plausible network via a provider (mirror `WorldProvider`).
-   - Throughput analysis: per-edge utilization vs. belt/pipe tier capacity;
-     flag over-capacity edges. Normalize into `app/schemas/logistics.py`.
-   - Publish live updates on a `logistics.*` WS topic (add to
-     `shared/constants/ws_topics.json`); never push to sockets directly.
-3. **Frontend**: replace the `/trains` stub (and/or a new Logistics page) with a
-   network/flow view — a graph or a Leaflet overlay reusing `mapCoords.ts` —
-   with per-route throughput and a utilization heat scale (dataviz palette).
-4. **Tests**: capacity/utilization math and network normalization (backend);
-   flow-scaling display helpers (frontend unit tests).
+1. **Power model** (`app/power/` — package scaffold exists):
+   - Serve `power_buildings.json` (generators: output MW, fuel, water, capacity)
+     via `GET /gamedata/power` (reuse the `lru_cache` loader pattern).
+   - A `PowerService`/analysis layer over the existing `power_samples` history +
+     live `GameStateService` power stats: generation vs. consumption headroom,
+     battery drain/charge trend, fuse-trip risk, and rule-based recommendations
+     (extend the dashboard's alert style). Normalize into `app/schemas/power.py`.
+   - Reuse the existing `/dashboard/history/power` samples; add a longer-window
+     query if needed. Consider publishing on the reserved `power.grid` WS topic.
+2. **Frontend**: replace the `/power` stub with a Power page — a larger
+   generation/consumption history chart (reuse `PowerChart`/Recharts, dataviz
+   palette), battery gauge, headroom meter, and a recommendations list.
+3. **Tests**: headroom/battery-trend/recommendation math (backend); chart data
+   shaping helpers (frontend unit tests).
 
 ### Housekeeping (small, high value — carried forward)
 

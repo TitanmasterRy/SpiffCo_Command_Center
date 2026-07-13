@@ -21,8 +21,10 @@ from app.config.logging_config import configure_logging
 from app.config.settings import Settings, get_settings
 from app.database.engine import get_session_factory, init_database, shutdown_database
 from app.errors import register_exception_handlers
+from app.logistics.service import LogisticsService
 from app.services.event_bus import EventBus
 from app.services.game_state import GameStateService
+from app.simulation.logistics import SimulatedLogisticsProvider
 from app.simulation.provider import SimulatedGameProvider
 from app.simulation.world import SimulatedWorldProvider
 from app.workers.scheduler import Scheduler
@@ -32,9 +34,13 @@ logger = logging.getLogger(__name__)
 
 
 def _register_jobs(
-    scheduler: Scheduler, bus: EventBus, game_state: GameStateService, world: WorldService
+    scheduler: Scheduler,
+    bus: EventBus,
+    game_state: GameStateService,
+    world: WorldService,
+    logistics: LogisticsService,
 ) -> None:
-    """Register periodic jobs: heartbeat, state/world refresh, history sampling."""
+    """Register periodic jobs: heartbeat, state/world/logistics refresh, history."""
 
     async def heartbeat() -> None:
         bus.publish("system.heartbeat", {"alive": True})
@@ -45,6 +51,9 @@ def _register_jobs(
     async def refresh_world() -> None:
         await world.refresh()
 
+    async def refresh_logistics() -> None:
+        await logistics.refresh()
+
     async def sample_history() -> None:
         await game_state.record_history(get_session_factory())
 
@@ -53,6 +62,7 @@ def _register_jobs(
     scheduler.add_job("system.heartbeat", heartbeat, interval_seconds=15.0)
     scheduler.add_job("game_state.refresh", refresh_state, interval_seconds=interval)
     scheduler.add_job("world.refresh", refresh_world, interval_seconds=interval)
+    scheduler.add_job("logistics.refresh", refresh_logistics, interval_seconds=interval)
     scheduler.add_job("game_state.history", sample_history, interval_seconds=30.0)
 
 
@@ -75,8 +85,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.world = world
     await world.refresh()
 
+    logistics = LogisticsService(SimulatedLogisticsProvider(), bus)
+    app.state.logistics = logistics
+    await logistics.refresh()
+
     scheduler = Scheduler()
-    _register_jobs(scheduler, bus, game_state, world)
+    _register_jobs(scheduler, bus, game_state, world, logistics)
     app.state.scheduler = scheduler
     await scheduler.start()
 

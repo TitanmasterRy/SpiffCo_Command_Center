@@ -35,16 +35,6 @@ export function Resources() {
   );
 }
 
-export function Trains() {
-  return (
-    <PagePlaceholder
-      title="Train Network"
-      phase="Phase 6"
-      description="Train routes, timetables, throughput analysis, and network visualization."
-    />
-  );
-}
-
 export function Blueprints() {
   return (
     <PagePlaceholder

@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useDashboardStreamHandler } from '../hooks/useDashboard';
+import { useLogisticsStreamHandler } from '../hooks/useLogistics';
 import { useWorldStreamHandler } from '../hooks/useWorld';
 import { useEventStream } from '../hooks/useEventStream';
 import { Sidebar } from './Sidebar';
@@ -12,9 +13,11 @@ import { TopBar } from './TopBar';
 export function AppLayout() {
   const handleDashboardEvent = useDashboardStreamHandler();
   const handleWorldEvent = useWorldStreamHandler();
+  const handleLogisticsEvent = useLogisticsStreamHandler();
   useEventStream(['*'], (message) => {
     handleDashboardEvent(message);
     handleWorldEvent(message);
+    handleLogisticsEvent(message);
   });
 
   return (

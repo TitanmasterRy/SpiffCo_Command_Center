@@ -137,6 +137,22 @@ inputs}`); `totals` carries `power_mw`, `machine_counts`, `raw_materials`,
 `404 not_found`; cycles / missing machines are reported in `warnings`.
 Somersloop-amplified nodes double output at `×4` per-machine power.
 
+## Endpoints (Phase 6 — Logistics)
+
+### `GET /api/v1/gamedata/transport`
+
+`TransportData` `{belts, pipes: [{id, name, rate}], vehicles: [{id, name,
+capacity_slots?, power_mw?, fuel?}]}`. Static, cached.
+
+### `GET /api/v1/logistics`
+
+`LogisticsSnapshot`: `nodes` (`{id, name, type, position}`), `routes`
+(`{id, name, mode, tier, item, throughput_per_min, capacity_per_min, from_node,
+to_node, utilization, over_capacity}` — the last two derived server-side),
+`trains` (live, also streamed on WS topic `logistics.trains`), and a `summary`
+(`route_count`, `node_count`, `over_capacity_routes`, `throughput_by_mode`,
+`max_utilization`).
+
 ## WebSocket `/ws`
 
 Client → server:

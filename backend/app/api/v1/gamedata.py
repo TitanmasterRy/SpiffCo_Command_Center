@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.logistics.data import load_transport
 from app.planner.gamedata import load_buildings
 from app.production.data import load_items, load_recipes
+from app.schemas.logistics import TransportData
 from app.schemas.planner import BuildingInfo
 from app.schemas.production import ItemInfo, RecipeInfo
 
@@ -28,3 +30,9 @@ async def list_recipes() -> list[RecipeInfo]:
 async def list_items() -> list[ItemInfo]:
     """All known game items."""
     return list(load_items())
+
+
+@router.get("/transport", response_model=TransportData)
+async def transport() -> TransportData:
+    """Belt/pipe tiers and logistics vehicles with their capacities."""
+    return load_transport()

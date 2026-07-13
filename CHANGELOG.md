@@ -6,6 +6,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 6: Logistics
+
+- Logistics network model (`app/schemas/logistics.py`): nodes (stations/
+  factories/ports) joined by directed routes carrying an item at a throughput;
+  each route's `utilization` and `over_capacity` are derived server-side against
+  its belt/pipe/vehicle tier capacity.
+- `SimulatedLogisticsProvider` + `LogisticsService`: a seeded mid-game network
+  with trains ping-ponging along the rail line, published live on WS topic
+  `logistics.trains`; pure throughput analysis (`app/logistics/analysis.py`)
+  rolls up per-mode throughput, peak utilization, and over-capacity routes.
+- Endpoints: `GET /api/v1/logistics` (network + trains + summary) and
+  `GET /api/v1/gamedata/transport` (belt/pipe tiers + vehicles).
+- Logistics page (`pages/Logistics.tsx`, route `/trains`): an SVG network
+  schematic (routes colored by a green→amber→red utilization scale, width by
+  throughput, live train markers streamed over WS), a summary panel, and a
+  routes table with utilization bars and over-capacity flags. Pure view helpers
+  in `utils/logisticsView.ts` (unit-tested).
+
 ### Added — Phase 5: Production Planner
 
 - Recipe-tree solver (`app/production/solver.py`): resolves a target item + rate

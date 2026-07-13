@@ -9,6 +9,7 @@ import type {
   PlanUpdate,
   PlanVersion,
 } from '../types/planner';
+import type { LogisticsSnapshot, TransportData } from '../types/logistics';
 import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
 import type { CustomMarker, CustomMarkerIn, WorldSnapshot } from '../types/world';
 import { apiFetch } from './http';
@@ -49,6 +50,10 @@ export const api = {
     buildings: () => apiFetch<BuildingInfo[]>('/api/v1/gamedata/buildings'),
     recipes: () => apiFetch<RecipeInfo[]>('/api/v1/gamedata/recipes'),
     items: () => apiFetch<ItemInfo[]>('/api/v1/gamedata/items'),
+    transport: () => apiFetch<TransportData>('/api/v1/gamedata/transport'),
+  },
+  logistics: {
+    snapshot: () => apiFetch<LogisticsSnapshot>('/api/v1/logistics'),
   },
   production: {
     plan: (request: ProductionRequest) =>

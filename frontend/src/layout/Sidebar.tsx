@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { to: '/planner', label: 'Production Planner', icon: '⚙' },
   { to: '/power', label: 'Power', icon: '⚡' },
   { to: '/resources', label: 'Resources', icon: '⛏' },
-  { to: '/trains', label: 'Train Network', icon: '🚆' },
+  { to: '/trains', label: 'Logistics', icon: '🚆' },
   { to: '/blueprints', label: 'Blueprints', icon: '📐' },
   { to: '/settings', label: 'Settings', icon: '🛠' },
 ] as const;
