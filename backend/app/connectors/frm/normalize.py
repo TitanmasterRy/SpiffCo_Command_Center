@@ -8,6 +8,7 @@ degrades gracefully instead of raising. Raw FRM shapes never leave this package.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
@@ -28,7 +29,7 @@ from app.schemas.logistics import (
 from app.schemas.logistics import (
     LogisticsSummary as LogSummary,
 )
-from app.schemas.world import MapFeature, PlayerInfo, Position, WorldSnapshot
+from app.schemas.world import FeatureType, MapFeature, PlayerInfo, Position, WorldSnapshot
 
 Raw = dict[str, Any]
 
@@ -48,8 +49,13 @@ def _location(entry: Raw) -> Position:
 
 
 def _slug(name: str) -> str:
-    """Stable-ish id slug from a display name."""
-    return "-".join(name.lower().split()) or "unknown"
+    """Stable, DOM-safe kebab-case id from a display name or FRM identifier.
+
+    Any run of non-alphanumeric characters (spaces, underscores, dots) becomes a
+    single hyphen, so ``"Iron Ore"`` -> ``"iron-ore"`` and an FRM id like
+    ``"P_2"`` -> ``"p-2"`` (not ``"p_2"``).
+    """
+    return "-".join(re.findall(r"[a-z0-9]+", name.lower())) or "unknown"
 
 
 def normalize_power(circuits: Iterable[Raw]) -> PowerStats:
@@ -83,11 +89,13 @@ def _factory_groups(buildings: Iterable[Raw]) -> tuple[list[FactoryStatus], Mach
         name = str(b.get("Name") or b.get("building") or "Building")
         g = groups.setdefault(name, {"total": 0, "running": 0, "unpowered": 0, "eff": 0.0})
         g["total"] += 1
-        productivity = _num(b.get("productivity"), _num(b.get("ManuSpeed")))
+        # FRM 1.5.x sends capitalized keys (Productivity, PowerInfo); keep the
+        # lowercase fallbacks for older/variant payloads.
+        productivity = _num(b.get("Productivity", b.get("productivity")), _num(b.get("ManuSpeed")))
         producing = bool(b.get("IsProducing", productivity > 0))
-        powered = bool(b.get("IsConfigured", True)) and _num(
-            (b.get("powerInfo") or {}).get("PowerConsumed"), 1.0
-        ) >= 0
+        power_info = b.get("PowerInfo") or b.get("powerInfo") or {}
+        fuse = bool(power_info.get("FuseTriggered"))
+        powered = bool(b.get("IsConfigured", True)) and not fuse
         if not powered:
             g["unpowered"] += 1
         elif producing:
@@ -189,14 +197,57 @@ _NODE_TYPE_MAP = {
 }
 
 
+def _pickup_features(
+    entries: Iterable[Raw],
+    feature_type: FeatureType,
+    *,
+    default_name: str,
+    collected_key: str | None = None,
+) -> list[MapFeature]:
+    """Map a FRM pickup endpoint (artifacts / slugs / drop pods) to features.
+
+    Endpoints only return items still present in the world, so uncollected is
+    the default; *collected_key* (e.g. ``Looted`` for drop pods) overrides that
+    when the payload tracks a looted/opened flag.
+    """
+    features: list[MapFeature] = []
+    for i, e in enumerate(entries):
+        name = str(e.get("Name") or default_name)
+        collected = bool(e.get(collected_key)) if collected_key else False
+        meta: dict[str, str | float | int] = {"kind": _slug(name)}
+        required = (e.get("RequiredItem") or {}).get("Name")
+        if required:
+            meta["requires"] = str(required)
+        features.append(
+            MapFeature(
+                id=_slug(f"{feature_type}-{e.get('ID', i)}"),
+                type=feature_type,
+                name=name,
+                position=_location(e),
+                meta=meta,
+                collected=collected,
+            )
+        )
+    return features
+
+
 def normalize_world(
     players_raw: Iterable[Raw],
     factory_raw: Iterable[Raw],
     nodes_raw: Iterable[Raw],
     *,
+    artifacts_raw: Iterable[Raw] | None = None,
+    slugs_raw: Iterable[Raw] | None = None,
+    drop_pods_raw: Iterable[Raw] | None = None,
     source: str = "frm",
 ) -> WorldSnapshot:
-    """Build a world snapshot from FRM players / factories / resource nodes."""
+    """Build a world snapshot from FRM players / factories / resource nodes.
+
+    Pickups are optional: *artifacts_raw* (Somersloops/Mercer Spheres) and
+    *slugs_raw* (power slugs) render as artifacts; *drop_pods_raw* as crash-site
+    wrecks. FRM 1.5.x exposes no endpoint for wild food, so that category stays
+    empty on live data.
+    """
     players = [
         PlayerInfo(
             id=_slug(str(p.get("Name") or f"player-{i}")),
@@ -207,10 +258,24 @@ def normalize_world(
         for i, p in enumerate(players_raw, start=1)
     ]
     features: list[MapFeature] = []
-    for b in factory_raw:
+    for i, b in enumerate(factory_raw):
         name = str(b.get("Name") or "Factory")
+        # Every building is its own map feature — the id must be unique per
+        # building (FRM ``ID`` when present, else the enumeration index) so
+        # same-class buildings don't collide into one marker.
+        meta: dict[str, str | float | int] = {"kind": _slug(name)}
+        outputs = [str(o.get("Name") or o.get("item") or "") for o in b.get("production", []) or []]
+        outputs = [o for o in outputs if o]
+        if outputs:
+            meta["produces"] = ", ".join(dict.fromkeys(outputs))
         features.append(
-            MapFeature(id=_slug(name), type="factory", name=name, position=_location(b))
+            MapFeature(
+                id=_slug(f"factory-{b.get('ID', i)}"),
+                type="factory",
+                name=name,
+                position=_location(b),
+                meta=meta,
+            )
         )
     for node in nodes_raw:
         name = str(node.get("Name") or node.get("ResourceForm") or "Node")
@@ -226,6 +291,11 @@ def normalize_world(
                 occupied=occupied,
             )
         )
+    features += _pickup_features(artifacts_raw or [], "artifact", default_name="Artifact")
+    features += _pickup_features(slugs_raw or [], "artifact", default_name="Power Slug")
+    features += _pickup_features(
+        drop_pods_raw or [], "wreck", default_name="Crash Site", collected_key="Looted"
+    )
     return WorldSnapshot(
         generated_at=datetime.now(UTC),
         source=source,

@@ -27,6 +27,27 @@ export interface SettingValue {
   value: unknown;
 }
 
+/** User-editable FRM connection settings (`PUT /api/v1/settings/frm`). */
+export interface FrmConfig {
+  enabled: boolean;
+  base_url: string;
+}
+
+/** FRM config plus live connection state (`GET /api/v1/settings/frm`). */
+export interface FrmConfigStatus extends FrmConfig {
+  source: 'simulation' | 'frm' | 'save';
+  state: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connected: boolean;
+  message: string | null;
+}
+
+/** Result of probing an FRM endpoint (`POST /api/v1/settings/frm/test`). */
+export interface FrmTestResult {
+  reachable: boolean;
+  base_url: string;
+  message: string;
+}
+
 /** Envelope for every message received over the WebSocket. */
 export interface WsEnvelope<T = unknown> {
   topic: string;

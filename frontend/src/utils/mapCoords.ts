@@ -16,3 +16,20 @@ export function toLatLng(position: Position): [number, number] {
 export function fromLatLng(lat: number, lng: number): Position {
   return { x: lng * CM_PER_UNIT, y: -lat * CM_PER_UNIT, z: 0 };
 }
+
+/**
+ * Game-coordinate extent (cm) of the in-game map image, taken verbatim from the
+ * Ficsit Remote Monitoring web UI: `bounds:[-324698.168,-375000,425301.832,375000]`
+ * as `[minX, minY, maxX, maxY]`. Converting both corners through {@link toLatLng}
+ * puts the image in the exact same space as every plotted feature, so they align.
+ */
+const MAP_GAME_BOUNDS = { minX: -324698.16796875, minY: -375000, maxX: 425301.83203125, maxY: 375000 };
+
+/** Leaflet `[[lat,lng],[lat,lng]]` bounds for the map background ImageOverlay. */
+export const MAP_IMAGE_BOUNDS: [[number, number], [number, number]] = [
+  toLatLng({ x: MAP_GAME_BOUNDS.minX, y: MAP_GAME_BOUNDS.minY, z: 0 }),
+  toLatLng({ x: MAP_GAME_BOUNDS.maxX, y: MAP_GAME_BOUNDS.maxY, z: 0 }),
+];
+
+/** Public path to the bundled in-game map render (see `public/assets/`). */
+export const MAP_IMAGE_URL = '/assets/satisfactory-map.avif';

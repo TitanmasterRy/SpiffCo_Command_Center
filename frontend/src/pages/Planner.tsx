@@ -1,9 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Card } from '../components/Card';
+import { ProductionGraph } from '../components/ProductionGraph';
 import { StatusBadge } from '../components/StatusBadge';
 import { useItems, useProducibleRecipes, useProductionPlan } from '../hooks/useProduction';
 import type { ProductionNode, ProductionRequest } from '../types/production';
 import { formatMegawatts, formatPerMinute } from '../utils/format';
+import { buildProductionGraph } from '../utils/productionGraph';
+
+type ChainView = 'tree' | 'graph' | 'items' | 'buildings';
+const CHAIN_VIEWS: { id: ChainView; label: string }[] = [
+  { id: 'tree', label: 'Tree list' },
+  { id: 'graph', label: 'Network graph' },
+  { id: 'items', label: 'Items' },
+  { id: 'buildings', label: 'Buildings' },
+];
 
 /** Distinct craftable items in a solved tree that have alternate recipes. */
 function craftableItems(node: ProductionNode, into: Set<string> = new Set()): Set<string> {
@@ -90,6 +100,7 @@ export default function Planner() {
   const [rate, setRate] = useState(60);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [somersloop, setSomersloop] = useState<Set<string>>(new Set());
+  const [chainView, setChainView] = useState<ChainView>('tree');
 
   const request: ProductionRequest | null = target
     ? { item: target, rate_per_min: rate, recipe_overrides: overrides, somersloop_items: [...somersloop] }
@@ -201,14 +212,40 @@ export default function Planner() {
       {plan && (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_20rem]">
           <Card title="Production chain">
-            <div className="min-w-0">
-              <TreeRow
-                node={plan.root}
-                depth={0}
-                somersloop={somersloop}
-                onToggleSloop={toggleSloop}
-              />
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {CHAIN_VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setChainView(v.id)}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                    chainView === v.id
+                      ? 'border-accent/50 bg-accent/10 text-accent'
+                      : 'border-surface-border bg-surface-raised text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
             </div>
+
+            {chainView === 'tree' && (
+              <div className="min-w-0">
+                <TreeRow
+                  node={plan.root}
+                  depth={0}
+                  somersloop={somersloop}
+                  onToggleSloop={toggleSloop}
+                />
+              </div>
+            )}
+            {chainView === 'graph' && <ProductionGraph root={plan.root} />}
+            {chainView === 'items' && (
+              <ItemsView root={plan.root} />
+            )}
+            {chainView === 'buildings' && (
+              <BuildingsView counts={plan.totals.machine_counts} />
+            )}
+
             {plan.warnings.length > 0 && (
               <ul className="mt-3 space-y-1 border-t border-surface-border pt-2 text-xs text-status-warn">
                 {plan.warnings.map((w) => (
@@ -254,6 +291,56 @@ export default function Planner() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Flat per-item view: every distinct item in the tree with its total rate. */
+function ItemsView({ root }: { root: ProductionNode }) {
+  const nodes = useMemo(
+    () => buildProductionGraph(root).nodes.sort((a, b) => b.rate - a.rate),
+    [root],
+  );
+  return (
+    <div className="space-y-1 text-sm">
+      {nodes.map((n) => (
+        <div
+          key={n.item}
+          className="flex flex-wrap items-center gap-x-3 border-b border-surface-border/60 py-1.5"
+        >
+          <span className={n.isRaw ? 'text-status-idle' : 'text-slate-200'}>{n.name}</span>
+          <span className="tabular-nums text-xs text-slate-500">{formatPerMinute(n.rate)}</span>
+          {n.isRaw ? (
+            <StatusBadge kind="idle" label="raw" />
+          ) : (
+            <span className="text-xs text-slate-500">
+              {n.machineCount.toFixed(2)}× {n.machineName} · {formatMegawatts(n.powerMw)}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Per-building view: total machine count for each building in the plan. */
+function BuildingsView({ counts }: { counts: Record<string, number> }) {
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0)
+    return <p className="text-sm text-slate-500">No buildings required.</p>;
+  return (
+    <div className="space-y-1 text-sm">
+      {entries.map(([id, n]) => (
+        <div
+          key={id}
+          className="flex items-center justify-between border-b border-surface-border/60 py-1.5"
+        >
+          <span className="text-slate-200">{id}</span>
+          <span className="tabular-nums text-xs text-slate-400">
+            {n.toFixed(2)}× ({Math.ceil(n)} built)
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

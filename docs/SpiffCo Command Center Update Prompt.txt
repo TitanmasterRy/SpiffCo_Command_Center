@@ -1,0 +1,500 @@
+# SpiffCo Command Center — Architecture Research & Integration Task
+
+You are a senior software engineer joining the SpiffCo Command Center project.
+
+Your task is **NOT** to copy code from existing projects.
+
+Instead, analyze the architecture, data flow, algorithms, and design patterns used in the following repositories and adapt those ideas into SpiffCo Command Center.
+
+Repositories to analyze:
+
+* https://github.com/featheredtoast/satisfactory-monitoring
+* https://github.com/Jonathan-Hofmann/ficsit-remote-monitoring-dasboard
+* https://github.com/TitanmasterRy/SpiffCo_Command_Center
+
+---
+
+# Primary Objective
+
+Use the first two repositories as architectural references.
+
+Determine:
+
+* how they communicate with Ficsit Remote Monitoring
+* how they request and cache data
+* how they organize world objects
+* how they render maps
+* how factories are identified
+* how buildings are grouped
+* how production is calculated
+* how power data is collected
+* how transportation data is represented
+* how refresh cycles work
+
+Then improve upon those designs inside SpiffCo Command Center.
+
+Do not simply recreate their implementation.
+
+---
+
+# Phase 1 — Repository Analysis
+
+Read both repositories completely.
+
+Create a document named:
+
+Architecture_Comparison.md
+
+Include:
+
+## Repository Overview
+
+For each repository describe:
+
+* project structure
+* technologies
+* strengths
+* weaknesses
+* interesting implementation details
+
+---
+
+## Data Flow
+
+Document:
+
+FRM
+
+↓
+
+HTTP/WebSocket
+
+↓
+
+Parsing
+
+↓
+
+Internal Models
+
+↓
+
+Caching
+
+↓
+
+Frontend
+
+Explain every stage.
+
+---
+
+## API Layer
+
+Determine:
+
+How often requests are made.
+
+Whether polling or WebSockets are used.
+
+How failures are handled.
+
+How reconnects occur.
+
+How stale data is prevented.
+
+How caching works.
+
+---
+
+## World Representation
+
+Determine how each project represents:
+
+Players
+
+Buildings
+
+Machines
+
+Storage
+
+Power
+
+Vehicles
+
+Trains
+
+Resource nodes
+
+Conveyor belts
+
+Pipelines
+
+---
+
+## Factory Detection
+
+This is one of the most important parts.
+
+Determine how factories are represented.
+
+If factories are not explicitly detected, design a better system.
+
+Create a Factory Detection document explaining the algorithm.
+
+---
+
+# Phase 2 — Build a Better Factory Detection System
+
+Implement automatic factory detection.
+
+Factories should NOT require manual creation.
+
+Instead:
+
+1. Download every building from FRM.
+
+2. Cluster nearby production buildings.
+
+3. Ignore decorative buildings.
+
+4. Group production buildings into campuses.
+
+5. Detect connected logistics.
+
+6. Create a Factory object.
+
+Each factory should contain:
+
+Factory ID
+
+Factory Name
+
+Center Position
+
+Bounding Polygon
+
+Production Buildings
+
+Storage
+
+Power Connections
+
+Inputs
+
+Outputs
+
+Train Stations
+
+Truck Stations
+
+Drone Ports
+
+Estimated Purpose
+
+Confidence Score
+
+---
+
+# Factory Classification
+
+Automatically classify factories.
+
+Examples:
+
+Steelworks
+
+Iron Foundry
+
+Copper Works
+
+Oil Refinery
+
+Fuel Plant
+
+Computer Factory
+
+Motor Factory
+
+Aluminum Plant
+
+Nuclear Facility
+
+Storage Yard
+
+Mixed Production
+
+Classification should consider:
+
+Recipes
+
+Inputs
+
+Outputs
+
+Building types
+
+Nearby logistics
+
+Dominant products
+
+---
+
+# Factory Boundaries
+
+Instead of circles, generate polygons.
+
+Possible methods:
+
+Convex Hull
+
+Concave Hull
+
+Alpha Shapes
+
+Connected Graph
+
+Choose the best approach.
+
+Factories should highlight as complete industrial campuses.
+
+---
+
+# Logistics Graph
+
+Create a graph representing:
+
+Nodes:
+
+Factories
+
+Stations
+
+Storage
+
+Power Plants
+
+Edges:
+
+Belts
+
+Pipes
+
+Railways
+
+Truck Routes
+
+Drone Routes
+
+Every connection should be represented internally.
+
+---
+
+# Resource Assignment
+
+Automatically assign resource nodes.
+
+Each miner should belong to a factory.
+
+Display:
+
+Distance
+
+Purity
+
+Current Output
+
+Maximum Output
+
+Utilization
+
+Unused Nodes
+
+Potential Expansion
+
+---
+
+# Live World Map
+
+Replace a simple marker map with GIS-style layers.
+
+Layers:
+
+Factories
+
+Buildings
+
+Players
+
+Vehicles
+
+Resource Nodes
+
+Power
+
+Rail
+
+Roads
+
+Water
+
+Custom Markers
+
+Heatmaps
+
+Coverage
+
+Allow enabling/disabling every layer.
+
+---
+
+# Production Engine
+
+Create an internal production graph.
+
+Every machine becomes a node.
+
+Inputs and outputs become edges.
+
+The graph should support:
+
+Bottleneck analysis
+
+Machine starvation
+
+Overflow
+
+Storage filling
+
+Idle detection
+
+Production forecasting
+
+---
+
+# AI Advisor
+
+The advisor should analyze the production graph.
+
+Examples:
+
+"Steelworks is iron constrained."
+
+"Foundry Hall has 14 idle Foundries."
+
+"Coal Mine #2 is operating at only 43%."
+
+"Power Plant Alpha is nearing maximum capacity."
+
+"Factory Beta should use the Solid Steel Ingot alternate recipe."
+
+Explain WHY every recommendation is made.
+
+---
+
+# Internal Architecture
+
+Do NOT expose raw FRM data to the frontend.
+
+Create internal domain models.
+
+Example:
+
+FRM JSON
+
+↓
+
+FRM Adapter
+
+↓
+
+Normalized Models
+
+↓
+
+Factory Detection Engine
+
+↓
+
+Production Engine
+
+↓
+
+Analytics
+
+↓
+
+REST/WebSocket API
+
+↓
+
+Frontend
+
+All frontend components should consume only normalized SpiffCo models.
+
+---
+
+# Performance
+
+Avoid recomputing the world every refresh.
+
+Implement:
+
+Spatial indexing
+
+Caching
+
+Incremental updates
+
+Dirty-region recalculation
+
+Background workers
+
+Only recompute factories affected by changed buildings.
+
+My recommendation for SpiffCo
+
+If I were prioritizing the architecture, I'd take:
+
+From featheredtoast
+Historical metrics and analytics
+Alerting concepts
+Caching
+Multi-server support
+Time-series mindset
+From Jonathan-Hofmann
+Interactive dashboard
+Responsive, game-focused UI
+Direct FRM integration patterns
+Storage and inventory presentation
+
+Then I'd build what neither project has:
+
+Factory Detection Engine (automatic campus grouping)
+World Graph (relationships between mines, factories, and logistics)
+Production Graph (material flow and bottleneck analysis)
+SpiffCo Domain Model (treat factories as first-class objects instead of just collections of buildings)
+
+---
+
+# Deliverables
+
+Implement:
+
+* Factory Detection Engine
+* World Graph
+* Logistics Graph
+* Production Graph
+* Analytics Engine
+* Resource Assignment Engine
+* Map Layer System
+* FRM Adapter
+* Caching Layer
+* Internal Domain Models
+
+Document every subsystem.
+
+Whenever possible, improve upon the designs used in the reference repositories instead of reproducing them.
+
+The end result should make SpiffCo Command Center the most advanced open-source monitoring dashboard for Satisfactory.

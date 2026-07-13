@@ -7,8 +7,10 @@ cp .env.example .env   # optional overrides
 docker compose up --build -d
 ```
 
-- UI: http://localhost:8080 (nginx serving the built frontend, proxying
-  `/api` and `/ws` to the backend container)
+- UI: http://localhost:8090 (nginx serving the built frontend, proxying
+  `/api` and `/ws` to the backend container). Host port 8090 is used because
+  8080 is commonly taken by other services (e.g. SmartFoxServer 2X); change the
+  `frontend` port mapping in `docker-compose.yml` if you prefer another.
 - API: http://localhost:8000
 - Data persists in the `spiffco-data` volume (SQLite file).
 

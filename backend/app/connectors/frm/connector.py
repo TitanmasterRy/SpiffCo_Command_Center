@@ -16,6 +16,7 @@ import asyncio
 import contextlib
 import logging
 from enum import StrEnum
+from typing import Any
 
 from app.config.settings import Settings
 from app.connectors.frm import normalize
@@ -75,11 +76,25 @@ class FrmConnector:
             self._bus.publish("frm.status", {"state": state.value})
             logger.info("FRM connection state: %s", state.value)
 
+    async def _get_optional(self, path: str) -> list[Any]:
+        """Fetch an endpoint that may not exist on every FRM version.
+
+        Returns an empty list (instead of raising) so a missing pickup endpoint
+        never breaks the core poll — only the required endpoints gate the probe.
+        """
+        try:
+            data: list[Any] = await self._client.get(path)
+            return data
+        except UpstreamUnavailableError:
+            logger.debug("FRM optional endpoint %s unavailable; skipping", path)
+            return []
+
     async def poll_once(self) -> None:
         """Fetch all endpoints once and refresh the cached snapshots.
 
         Raises:
-            UpstreamUnavailableError: if any FRM request fails.
+            UpstreamUnavailableError: if any *required* FRM request fails.
+                Optional pickup endpoints degrade to empty instead.
         """
         power = await self._client.get("getPower")
         factory = await self._client.get("getFactory")
@@ -87,8 +102,18 @@ class FrmConnector:
         nodes = await self._client.get("getResourceNode")
         stations = await self._client.get("getTrainStation")
         trains = await self._client.get("getTrains")
+        artifacts = await self._get_optional("getArtifacts")
+        slugs = await self._get_optional("getPowerSlug")
+        drop_pods = await self._get_optional("getDropPod")
         self._dashboard = normalize.normalize_dashboard(power, factory)
-        self._world = normalize.normalize_world(players, factory, nodes)
+        self._world = normalize.normalize_world(
+            players,
+            factory,
+            nodes,
+            artifacts_raw=artifacts,
+            slugs_raw=slugs,
+            drop_pods_raw=drop_pods,
+        )
         self._logistics = normalize.normalize_logistics(stations, trains)
         self._set_state(ConnectionState.CONNECTED)
 

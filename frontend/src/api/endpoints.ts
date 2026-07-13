@@ -1,4 +1,11 @@
-import type { AppInfo, HealthStatus, SettingValue } from '../types/api';
+import type {
+  AppInfo,
+  FrmConfig,
+  FrmConfigStatus,
+  FrmTestResult,
+  HealthStatus,
+  SettingValue,
+} from '../types/api';
 import type { DashboardSnapshot, PowerHistoryPoint } from '../types/dashboard';
 import type {
   BuildingInfo,
@@ -38,6 +45,17 @@ export const api = {
       apiFetch<SettingValue>(`/api/v1/settings/${encodeURIComponent(key)}`, {
         method: 'PUT',
         body: JSON.stringify({ key, value }),
+      }),
+    frmConfig: () => apiFetch<FrmConfigStatus>('/api/v1/settings/frm'),
+    updateFrmConfig: (config: FrmConfig) =>
+      apiFetch<FrmConfigStatus>('/api/v1/settings/frm', {
+        method: 'PUT',
+        body: JSON.stringify(config),
+      }),
+    testFrmConfig: (config: FrmConfig) =>
+      apiFetch<FrmTestResult>('/api/v1/settings/frm/test', {
+        method: 'POST',
+        body: JSON.stringify(config),
       }),
   },
   dashboard: {

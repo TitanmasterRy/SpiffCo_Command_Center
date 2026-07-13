@@ -33,6 +33,7 @@ from app.errors import NotFoundError, UpstreamUnavailableError, register_excepti
 from app.logistics.service import LogisticsProvider, LogisticsService
 from app.offline import OfflineManager
 from app.services.event_bus import EventBus
+from app.services.frm_config import FrmConfigService, load_persisted_config
 from app.services.game_state import GameStateProvider, GameStateService
 from app.simulation.logistics import SimulatedLogisticsProvider
 from app.simulation.provider import SimulatedGameProvider
@@ -104,8 +105,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     bus = EventBus()
     app.state.event_bus = bus
 
+    # A persisted UI override (app_settings) wins over the env-var defaults so
+    # runtime FRM changes survive restarts.
+    frm_config = await load_persisted_config(settings)
+    effective = settings.model_copy(
+        update={"frm_enabled": frm_config.enabled, "frm_base_url": frm_config.base_url}
+    )
+
     # Choose the live FRM connector when enabled and reachable, else simulation.
-    frm = await _try_start_frm(settings, bus)
+    frm = await _try_start_frm(effective, bus)
     app.state.frm = frm
     game_provider: GameStateProvider
     world_provider: WorldProvider
@@ -143,6 +151,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         base_source="frm" if frm is not None else "simulation",
     )
 
+    # Runtime FRM (re)configuration from the UI. Keeps app.state.frm in sync so
+    # health checks and the offline manager always see the live connector.
+    def _set_frm(connector: FrmConnector | None) -> None:
+        app.state.frm = connector
+
+    app.state.frm_config = FrmConfigService(
+        base_settings=settings,
+        bus=bus,
+        offline=app.state.offline,
+        config=frm_config,
+        connector=frm,
+        on_connector_change=_set_frm,
+    )
+
     scheduler = Scheduler()
     _register_jobs(scheduler, bus, game_state, world, logistics)
     app.state.scheduler = scheduler
@@ -156,8 +178,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         await scheduler.stop()
-        if frm is not None:
-            await frm.stop()
+        # Stop whatever connector is live now (runtime reconfig may have swapped it).
+        current_frm: FrmConnector | None = getattr(app.state, "frm", None)
+        if current_frm is not None:
+            await current_frm.stop()
         await shutdown_database()
         logger.info("Shutdown complete")
 

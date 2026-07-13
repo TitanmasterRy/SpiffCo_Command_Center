@@ -1,7 +1,8 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       SPIFFCO_HOST: 0.0.0.0
       SPIFFCO_PORT: "8000"
@@ -20,7 +21,8 @@ services:
     build:
       context: ./frontend
     ports:
-      - "8080:80"
+      # Host 8080 is taken by SmartFoxServer 2X on this machine; use 8090.
+      - "8090:80"
     depends_on:
       - backend
     restart: unless-stopped

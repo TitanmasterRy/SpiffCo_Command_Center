@@ -1,10 +1,47 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **All 12 spec phases complete** — post-spec hardening backlog remains
+Last updated: **2026-07-13** · Current milestone: **All 12 spec phases complete** — SCIM-parity pass underway; post-spec hardening backlog remains
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) (deliberate gaps).
+
+## 🆕 SCIM-parity pass (post-spec, in progress)
+
+Making the map / planner / calculator more like satisfactory-calculator.com (SCIM),
+on the **live-FRM** data path. Delivered so far:
+
+- **Full game-data importer** (`scripts/import_game_data.py`): parses the game's
+  `Docs.json` (UTF-16) and regenerates `items` / `resources` / `recipes` /
+  `alternate_recipes` / `buildings` / `build_costs` / `machines` /
+  `power_buildings` at full catalog scale — byte-shape-compatible with the seed
+  files, so the solver/planner/loaders need no changes (seed subset → ~800
+  recipes). Verified end-to-end against a synthetic `Docs.json`; validates against
+  `RecipeInfo`/`ItemInfo`/`BuildingInfo`. **Run it with the real file to populate
+  data** (`--docs <path>`, `--dry-run` to preview). Does **not** touch world
+  positions — `resource_nodes.json` / `collectibles.json` coordinates and exact
+  building footprints need map-data tooling (no coordinates exist in `Docs.json`).
+- **Planner network-graph view** (`components/ProductionGraph.tsx`,
+  `utils/productionGraph.ts`): SCIM-style draggable/zoomable left-to-right DAG of
+  the production chain (shared items merge into one node with summed rate), plus
+  **Tree / Network graph / Items / Buildings** view tabs on the planner. Pure
+  layout util unit-tested (`tests/productionGraph.test.ts`).
+- **Map coordinate readout**: live cursor game-world (cm) coordinates overlay on
+  the World Map (`CursorTracker`). Biome text deferred — needs region-polygon data.
+- **Map per-building rendering**: `normalize_world` now gives every building a
+  **unique** feature id (was colliding same-class buildings into one marker) and
+  attaches `produces` meta for popups. Regression-tested.
+- **New map layer types**: `resource_well`, `geyser` added to `FeatureType`
+  (schema + frontend styles/toggles) — render when data provides them.
+- **`_slug` hardened** to emit DOM-safe kebab ids (splits on `_`/`.`/space), which
+  also fixed a previously-broken, uncommitted pickups test.
+
+Verified: backend pytest **93/93**, frontend vitest **43/43**, `tsc`/production
+build clean, ruff + mypy clean on all changed files.
+
+Not in this pass (by decision): save-file editor (reverses live-only; risky
+`.sav` writes), tiled multi-zoom basemap (single game-image overlay already
+backs the map), and decorative rock/cave/road layers (bulk position data needed).
 
 ## ✅ Complete
 
@@ -297,14 +334,14 @@ estimates and the World Map / Logistics pages are not populated from saves (see
 
 ## 🚧 Incomplete
 
-The Factories and Resources pages exist only as placeholder stubs
-(`frontend/src/pages/stubs.tsx`); their backend packages are empty scaffolds.
-(Much of their content is already covered elsewhere: per-factory status on the
-Dashboard, resource nodes on the World Map.)
+The Factories (`pages/Factories.tsx`) and Resources (`pages/Resources.tsx`)
+pages are now built, rendering off the existing dashboard and world snapshots
+respectively (no dedicated backend packages needed). The `stubs.tsx`
+placeholder module has been removed.
 
 ### Known gaps in shipped code
 
-- **Dashboard runs on simulated data** — `SimulatedGameProvider` until Phase 11 swaps in the FRM provider (interface already matches).
+- **FRM connection is configurable in-app** — Settings page (or `PUT /api/v1/settings/frm`) enables/points the FRM connector at runtime, persisted in `app_settings` and applied without a restart; falls back to `SimulatedGameProvider` when no FRM mod is reachable. Env vars `SPIFFCO_FRM_ENABLED` / `SPIFFCO_FRM_BASE_URL` set the initial default.
 - **Auth settings exist but are not enforced** — do not expose beyond localhost until the auth middleware lands.
 - **Seed game data is a small subset** — full import from the game's `Docs.json` via a planned `scripts/import_game_data.py`.
 - **Frontend types mirrored by hand** — generate from OpenAPI before the contract grows.

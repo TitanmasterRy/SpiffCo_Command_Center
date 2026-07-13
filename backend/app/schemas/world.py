@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 FeatureType = Literal[
     "factory",
     "resource_node",
+    "resource_well",
+    "geyser",
     "power_plant",
     "train_station",
     "drone_port",

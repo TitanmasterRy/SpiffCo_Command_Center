@@ -65,6 +65,30 @@ class OfflineManager:
         await self._refresh_all()
         return source.summary()
 
+    async def set_base(
+        self,
+        *,
+        game: GameStateProvider,
+        world: WorldProvider,
+        logistics: LogisticsProvider,
+        source: BaseSource,
+    ) -> None:
+        """Replace the base (non-save) providers, e.g. after FRM reconfiguration.
+
+        When no save is active the new base becomes the live source immediately
+        (services are swapped and refreshed once). When a save *is* active only
+        the stored base changes, so a later :meth:`clear` restores the new base.
+        """
+        self._base_game = game
+        self._base_world = world
+        self._base_logistics = logistics
+        self._base_source = source
+        if self._source is None:
+            self._game_state.use_provider(game)
+            self._world.use_provider(world)
+            self._logistics.use_provider(logistics)
+            await self._refresh_all()
+
     async def clear(self) -> None:
         """Restore the base providers and refresh (no-op if not active)."""
         if self._source is None:

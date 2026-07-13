@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import { useMemo, useState } from 'react';
 import {
   CircleMarker,
+  ImageOverlay,
   MapContainer,
   Marker,
   Popup,
@@ -13,7 +14,7 @@ import {
 import { Card } from '../components/Card';
 import { useWorld, useMarkers } from '../hooks/useWorld';
 import type { FeatureType } from '../types/world';
-import { fromLatLng, toLatLng } from '../utils/mapCoords';
+import { fromLatLng, MAP_IMAGE_BOUNDS, MAP_IMAGE_URL, toLatLng } from '../utils/mapCoords';
 import { applyWorldFilters, metaOptions } from '../utils/worldFilters';
 
 /**
@@ -24,6 +25,8 @@ import { applyWorldFilters, metaOptions } from '../utils/worldFilters';
 const FEATURE_STYLE: Record<FeatureType, { color: string; label: string }> = {
   factory: { color: '#3987e5', label: 'Factories' },
   resource_node: { color: '#199e70', label: 'Resource nodes' },
+  resource_well: { color: '#00a3b4', label: 'Resource wells' },
+  geyser: { color: '#7bb662', label: 'Geysers' },
   power_plant: { color: '#c98500', label: 'Power plants' },
   train_station: { color: '#9085e9', label: 'Train stations' },
   drone_port: { color: '#d55181', label: 'Drone ports' },
@@ -54,6 +57,18 @@ const WORLD_BOUNDS: [[number, number], [number, number]] = [
 
 function AddMarkerOnClick({ onPick }: { onPick: (e: LeafletMouseEvent) => void }) {
   useMapEvents({ contextmenu: onPick });
+  return null;
+}
+
+/** Reports the cursor's game-world coordinates (cm) as the mouse moves. */
+function CursorTracker({ onMove }: { onMove: (pos: { x: number; y: number } | null) => void }) {
+  useMapEvents({
+    mousemove: (e) => {
+      const p = fromLatLng(e.latlng.lat, e.latlng.lng);
+      onMove({ x: p.x, y: p.y });
+    },
+    mouseout: () => onMove(null),
+  });
   return null;
 }
 
@@ -91,6 +106,8 @@ export default function WorldMap() {
   const [visible, setVisible] = useState<Record<FeatureType, boolean>>({
     factory: true,
     resource_node: true,
+    resource_well: true,
+    geyser: true,
     power_plant: true,
     train_station: true,
     drone_port: true,
@@ -99,7 +116,9 @@ export default function WorldMap() {
     collectible: true,
     wreck: true,
   });
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [hideCollected, setHideCollected] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [search, setSearch] = useState('');
   const [resource, setResource] = useState('all');
   const [purity, setPurity] = useState('all');
@@ -171,6 +190,16 @@ export default function WorldMap() {
           >
             Hide collected
           </button>
+          <button
+            onClick={() => setShowMap((v) => !v)}
+            className={`rounded-full border px-2.5 py-1 transition-colors ${
+              showMap
+                ? 'border-accent/50 bg-accent/10 text-accent'
+                : 'border-surface-border bg-surface-raised text-slate-400'
+            }`}
+          >
+            Map background
+          </button>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <SelectFilter
@@ -219,7 +248,7 @@ export default function WorldMap() {
         </span>
       </div>
 
-      <Card className="min-h-[32rem] flex-1 !p-1">
+      <Card className="relative min-h-[32rem] flex-1 !p-1">
         <MapContainer
           crs={CRS.Simple}
           center={[-120, -50]}
@@ -229,6 +258,9 @@ export default function WorldMap() {
           className="h-[32rem] w-full rounded-md bg-[#10131a]"
           attributionControl={false}
         >
+          {showMap && (
+            <ImageOverlay url={MAP_IMAGE_URL} bounds={MAP_IMAGE_BOUNDS} opacity={0.85} />
+          )}
           <Rectangle
             bounds={WORLD_BOUNDS}
             pathOptions={{ color: '#323945', weight: 1, fill: false, dashArray: '4 6' }}
@@ -239,6 +271,7 @@ export default function WorldMap() {
               setPendingName('');
             }}
           />
+          <CursorTracker onMove={setCursor} />
 
           {features.map((f) => {
             const style = FEATURE_STYLE[f.type];
@@ -346,6 +379,11 @@ export default function WorldMap() {
             </CircleMarker>
           ))}
         </MapContainer>
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-md border border-surface-border bg-surface/85 px-2.5 py-1 font-mono text-xs text-slate-300 backdrop-blur">
+          {cursor
+            ? `X ${Math.round(cursor.x).toLocaleString()}  ·  Y ${Math.round(cursor.y).toLocaleString()}`
+            : 'move cursor for coordinates'}
+        </div>
       </Card>
 
       {pending && (

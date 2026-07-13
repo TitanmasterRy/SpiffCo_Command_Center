@@ -3,6 +3,8 @@
 export type FeatureType =
   | 'factory'
   | 'resource_node'
+  | 'resource_well'
+  | 'geyser'
   | 'power_plant'
   | 'train_station'
   | 'drone_port'
@@ -38,7 +40,7 @@ export interface PlayerInfo {
 
 export interface WorldSnapshot {
   generated_at: string;
-  source: 'simulation' | 'frm';
+  source: 'simulation' | 'frm' | 'save';
   players: PlayerInfo[];
   features: MapFeature[];
 }

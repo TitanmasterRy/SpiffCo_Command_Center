@@ -42,6 +42,8 @@ const DEFAULTS: WorldFilters = {
   visible: {
     factory: true,
     resource_node: true,
+    resource_well: true,
+    geyser: true,
     power_plant: true,
     train_station: true,
     drone_port: true,

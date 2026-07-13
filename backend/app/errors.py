@@ -14,6 +14,7 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -67,7 +68,9 @@ class UnauthorizedError(AppError):
     code = "unauthorized"
 
 
-def _error_response(status_code: int, code: str, message: str, details: dict[str, Any]) -> JSONResponse:
+def _error_response(
+    status_code: int, code: str, message: str, details: dict[str, Any]
+) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={"error": {"code": code, "message": message, "details": details}},
@@ -83,8 +86,13 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation(_: Request, exc: RequestValidationError) -> JSONResponse:
+        # jsonable_encoder stringifies non-serializable ctx (e.g. a ValueError
+        # raised by a field validator) so the envelope always serializes.
         return _error_response(
-            422, "validation_failed", "Request validation failed", {"errors": exc.errors()}
+            422,
+            "validation_failed",
+            "Request validation failed",
+            {"errors": jsonable_encoder(exc.errors())},
         )
 
     @app.exception_handler(Exception)

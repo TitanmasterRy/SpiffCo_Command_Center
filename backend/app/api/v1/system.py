@@ -10,8 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_session, get_settings
 from app.config.settings import Settings
 from app.connectors.frm import ConnectionState, FrmConnector
-from app.schemas.system import AppInfo, HealthStatus, SettingValue
+from app.schemas.system import (
+    AppInfo,
+    FrmConfig,
+    FrmConfigStatus,
+    FrmTestResult,
+    HealthStatus,
+    SettingValue,
+)
 from app.services import system_service
+from app.services.frm_config import FrmConfigService
 
 router = APIRouter(tags=["system"])
 
@@ -25,6 +33,12 @@ def _frm_health(request: Request) -> str:
     if connector is None:
         return "not_configured"
     return "connected" if connector.state == ConnectionState.CONNECTED else "disconnected"
+
+
+def _frm_config(request: Request) -> FrmConfigService:
+    """Return the runtime FRM-configuration service from app state."""
+    service: FrmConfigService = request.app.state.frm_config
+    return service
 
 
 @router.get("/health", response_model=HealthStatus)
@@ -43,6 +57,24 @@ async def info(settings: SettingsDep) -> AppInfo:
 async def list_settings(session: SessionDep) -> list[SettingValue]:
     """List all persisted user settings."""
     return await system_service.list_settings(session)
+
+
+@router.get("/settings/frm", response_model=FrmConfigStatus)
+async def get_frm_config(request: Request) -> FrmConfigStatus:
+    """Return the current FRM connection config and live connection state."""
+    return _frm_config(request).status()
+
+
+@router.put("/settings/frm", response_model=FrmConfigStatus)
+async def update_frm_config(request: Request, body: FrmConfig) -> FrmConfigStatus:
+    """Persist and apply an FRM config change (reconnects live, no restart)."""
+    return await _frm_config(request).apply(body)
+
+
+@router.post("/settings/frm/test", response_model=FrmTestResult)
+async def test_frm_config(request: Request, body: FrmConfig) -> FrmTestResult:
+    """Probe an FRM endpoint for reachability without saving it."""
+    return await _frm_config(request).test(body.base_url)
 
 
 @router.get("/settings/{key}", response_model=SettingValue)
