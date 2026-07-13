@@ -6,6 +6,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Deployment: single-image Fly.io target
+
+- The FastAPI app can now serve the built SPA from the same origin
+  (`app.main.mount_frontend`, gated by `SPIFFCO_STATIC_DIR`): hashed assets are
+  served directly and non-API paths fall back to `index.html` for client-side
+  routing. No-op in dev, where Vite serves the frontend separately.
+- Root `Dockerfile` (multi-stage: build frontend → serve from backend) plus
+  `fly.toml` and `.dockerignore` for a one-command free public deploy on Fly.io
+  (simulation + offline data; SQLite on a persistent volume). See
+  `docs/DEPLOYMENT.md`.
+
 ### Added — Phase 12: Offline Mode (final spec phase)
 
 - Save-file parser (`app/offline/save_parser.py`, pure/no-I/O): reads the `.sav`

@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     # Offline mode (Phase 12): maximum accepted save-file upload size.
     save_max_upload_mb: int = 100
 
+    # Optional path to a built frontend (Vite ``dist/``). When set and present,
+    # the API also serves the SPA from the same origin (single-process deploy,
+    # e.g. Fly.io). Empty in dev, where Vite serves the frontend separately.
+    static_dir: str = ""
+
     # Background scheduler (periodic refresh/history jobs). Disabled in tests so
     # background DB writes never race request handlers on the shared connection.
     scheduler_enabled: bool = True

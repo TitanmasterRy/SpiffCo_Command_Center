@@ -10,9 +10,12 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.api.v1 import api_v1_router
@@ -26,7 +29,7 @@ from app.connectors.frm import (
     FrmWorldProvider,
 )
 from app.database.engine import get_session_factory, init_database, shutdown_database
-from app.errors import UpstreamUnavailableError, register_exception_handlers
+from app.errors import NotFoundError, UpstreamUnavailableError, register_exception_handlers
 from app.logistics.service import LogisticsProvider, LogisticsService
 from app.offline import OfflineManager
 from app.services.event_bus import EventBus
@@ -159,6 +162,38 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("Shutdown complete")
 
 
+def mount_frontend(app: FastAPI, static_dir: str) -> None:
+    """Serve a built SPA from *static_dir* on the same origin as the API.
+
+    Hashed build assets are served directly; every other (non-API) path falls
+    back to ``index.html`` so client-side routing works on deep links. No-op if
+    the directory has no ``index.html`` (the dev setup, where Vite serves it).
+    """
+    if not static_dir:
+        return
+    root = Path(static_dir)
+    index = root / "index.html"
+    if not index.is_file():
+        logger.warning("static_dir %s has no index.html; not serving frontend", static_dir)
+        return
+
+    assets = root / "assets"
+    if assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa(full_path: str) -> FileResponse:
+        """Serve a real static file if present, else the SPA entrypoint."""
+        if full_path.startswith(("api/", "ws")):
+            raise NotFoundError(f"No route for /{full_path}")
+        candidate = root / full_path
+        if full_path and candidate.is_file() and candidate.resolve().is_relative_to(root.resolve()):
+            return FileResponse(candidate)
+        return FileResponse(index)
+
+    logger.info("Serving frontend from %s", static_dir)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the FastAPI application.
 
@@ -187,6 +222,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(api_v1_router)
     app.include_router(ws_router)
+    mount_frontend(app, settings.static_dir)
     return app
 
 

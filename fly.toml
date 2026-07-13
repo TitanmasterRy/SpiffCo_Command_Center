@@ -1,0 +1,42 @@
+# Fly.io deploy for SpiffCo Command Center.
+#
+# One machine runs the combined image (root Dockerfile): FastAPI serves both the
+# API/WebSocket and the built SPA on one origin. SQLite lives on a persistent
+# volume. This deploy runs on SIMULATION + OFFLINE (save-upload) data — a cloud
+# machine cannot reach a game running on your PC, so leave FRM disabled here.
+#
+# First-time setup (once, from the repo root):
+#   fly launch --no-deploy --copy-config --name spiffco-command-center
+#   fly volumes create spiffco_data --size 1 --region iad
+#   fly deploy
+# Redeploys after that are just:  fly deploy
+
+app = "spiffco-command-center"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SPIFFCO_ENVIRONMENT = "production"
+  SPIFFCO_DEBUG = "false"
+  SPIFFCO_FRM_ENABLED = "false"
+  SPIFFCO_STATIC_DIR = "/srv/app/static"
+  SPIFFCO_DATABASE_URL = "sqlite+aiosqlite:////data/spiffco.db"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # Scale to zero when idle to stay inside the free allowance; the machine wakes
+  # on the next request (WebSockets are proxied over the same port).
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[mounts]]
+  source = "spiffco_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
