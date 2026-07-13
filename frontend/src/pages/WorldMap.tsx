@@ -1,4 +1,4 @@
-import { CRS, divIcon, type LeafletMouseEvent } from 'leaflet';
+import { CRS, type LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useMemo, useState } from 'react';
 import {
@@ -15,39 +15,26 @@ import { Card } from '../components/Card';
 import { useWorld, useMarkers } from '../hooks/useWorld';
 import type { FeatureType } from '../types/world';
 import { fromLatLng, MAP_IMAGE_BOUNDS, MAP_IMAGE_URL, toLatLng } from '../utils/mapCoords';
+import { FEATURE_COLOR, featureIcon, PURITY_COLOR } from '../utils/mapIcons';
 import { applyWorldFilters, metaOptions, producesOptions } from '../utils/worldFilters';
 
-/**
- * Dark categorical palette (dataviz skill, dark slots) — identity per feature type.
- * Infrastructure renders as circles, pickups (artifact/collectible/wreck) as
- * diamonds, so the shape class disambiguates any near hues.
- */
-const FEATURE_STYLE: Record<FeatureType, { color: string; label: string }> = {
-  factory: { color: '#3987e5', label: 'Factories' },
-  resource_node: { color: '#199e70', label: 'Resource nodes' },
-  resource_well: { color: '#00a3b4', label: 'Resource wells' },
-  geyser: { color: '#7bb662', label: 'Geysers' },
-  power_plant: { color: '#c98500', label: 'Power plants' },
-  train_station: { color: '#9085e9', label: 'Train stations' },
-  drone_port: { color: '#d55181', label: 'Drone ports' },
-  truck_station: { color: '#d95926', label: 'Truck stations' },
-  artifact: { color: '#9085e9', label: 'Artifacts' },
-  collectible: { color: '#008300', label: 'Food & consumables' },
-  wreck: { color: '#e66767', label: 'Crash sites' },
+/** Legend labels per feature type; colors live in {@link FEATURE_COLOR}. */
+const FEATURE_LABEL: Record<FeatureType, string> = {
+  factory: 'Factories',
+  resource_node: 'Resource nodes',
+  resource_well: 'Resource wells',
+  geyser: 'Geysers',
+  power_plant: 'Power plants',
+  train_station: 'Train stations',
+  drone_port: 'Drone ports',
+  truck_station: 'Truck stations',
+  artifact: 'Artifacts',
+  collectible: 'Food & consumables',
+  wreck: 'Crash sites',
 };
 const PICKUP_TYPES: ReadonlySet<FeatureType> = new Set(['artifact', 'collectible', 'wreck']);
 const PLAYER_COLOR = '#e66767';
 const MARKER_COLOR = '#94a3b8';
-
-/** Diamond icon for pickups; hollow + dimmed when already collected. */
-function pickupIcon(color: string, collected: boolean) {
-  return divIcon({
-    className: '',
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
-    html: `<div style="width:10px;height:10px;transform:rotate(45deg);border:2px solid ${color};background:${collected ? 'transparent' : color};opacity:${collected ? 0.45 : 0.95}"></div>`,
-  });
-}
 
 /** Playable world extent in km (game is ~750×750 km at our 1 unit = 1 km scale). */
 const WORLD_BOUNDS: [[number, number], [number, number]] = [
@@ -74,23 +61,33 @@ function CursorTracker({ onMove }: { onMove: (pos: { x: number; y: number } | nu
 
 interface SelectFilterProps {
   label: string;
+  /** Emoji/icon shown before the label. */
+  icon: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
 }
 
 /** Labeled dropdown used in the map toolbar; first option should be 'all'. */
-function SelectFilter({ label, value, options, onChange }: SelectFilterProps) {
+function SelectFilter({ label, icon, value, options, onChange }: SelectFilterProps) {
+  const active = value !== 'all';
   return (
-    <label className="flex items-center gap-1.5 text-xs text-slate-400">
+    <label
+      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+        active
+          ? 'border-accent/50 bg-accent/10 text-accent'
+          : 'border-surface-border bg-surface-raised text-slate-400'
+      }`}
+    >
+      <span aria-hidden>{icon}</span>
       {label}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-surface-border bg-surface-raised px-2 py-1 text-xs text-slate-200 focus:border-accent focus:outline-none"
+        className="rounded border-0 bg-transparent py-0.5 text-xs text-slate-200 focus:outline-none"
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} className="bg-surface text-slate-200">
             {o.label}
           </option>
         ))}
@@ -179,17 +176,98 @@ export default function WorldMap() {
 
   return (
     <div className="flex h-full flex-col space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold text-slate-100">World Map</h1>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search features…"
-          className="w-64 rounded-md border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-accent focus:outline-none"
-        />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold text-slate-100">World Map</h1>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search features…"
+            className="w-64 rounded-md border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-accent focus:outline-none"
+          />
+        </div>
+
+        {/* Dropdown filters — kept at the top, each with an icon. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <SelectFilter
+            icon="⛏️"
+            label="Resource"
+            value={resource}
+            onChange={setResource}
+            options={[
+              { value: 'all', label: 'All' },
+              ...resourceOptions.map((r) => ({ value: r, label: r })),
+            ]}
+          />
+          <SelectFilter
+            icon="💎"
+            label="Purity"
+            value={purity}
+            onChange={setPurity}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'impure', label: 'Impure' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'pure', label: 'Pure' },
+            ]}
+          />
+          <SelectFilter
+            icon="🔧"
+            label="Node status"
+            value={nodeStatus}
+            onChange={(v) => setNodeStatus(v as 'all' | 'free' | 'occupied')}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'free', label: 'Free' },
+              { value: 'occupied', label: 'Miner installed' },
+            ]}
+          />
+          <SelectFilter
+            icon="🗺️"
+            label="Region"
+            value={region}
+            onChange={setRegion}
+            options={[
+              { value: 'all', label: 'All' },
+              ...regionOptions.map((r) => ({ value: r, label: r })),
+            ]}
+          />
+          {producesOpts.length > 0 && (
+            <SelectFilter
+              icon="🏭"
+              label="Produces"
+              value={produces}
+              onChange={setProduces}
+              options={[
+                { value: 'all', label: 'All' },
+                ...producesOpts.map((p) => ({ value: p, label: p })),
+              ]}
+            />
+          )}
+          {kindOptions.length > 0 && (
+            <SelectFilter
+              icon="✨"
+              label="Pickup kind"
+              value={kind}
+              onChange={setKind}
+              options={[
+                { value: 'all', label: 'All' },
+                ...kindOptions.map((k) => ({ value: k, label: k })),
+              ]}
+            />
+          )}
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-1.5 rounded-md border border-surface-border bg-surface-raised px-2.5 py-1 text-xs text-slate-400 hover:text-slate-200"
+          >
+            ↺ Reset filters
+          </button>
+        </div>
+
+        {/* Layer toggles + map background. */}
         <div className="flex flex-wrap gap-2 text-xs">
-          {(Object.keys(FEATURE_STYLE) as FeatureType[]).map((type) => (
+          {(Object.keys(FEATURE_LABEL) as FeatureType[]).map((type) => (
             <button
               key={type}
               onClick={() => setVisible((v) => ({ ...v, [type]: !v[type] }))}
@@ -201,9 +279,9 @@ export default function WorldMap() {
             >
               <span
                 className="h-2 w-2 rounded-full"
-                style={{ background: FEATURE_STYLE[type].color, opacity: visible[type] ? 1 : 0.3 }}
+                style={{ background: FEATURE_COLOR[type], opacity: visible[type] ? 1 : 0.3 }}
               />
-              {FEATURE_STYLE[type].label}
+              {FEATURE_LABEL[type]}
             </button>
           ))}
           <button
@@ -227,79 +305,25 @@ export default function WorldMap() {
             Map background
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <SelectFilter
-            label="Resource"
-            value={resource}
-            onChange={setResource}
-            options={[
-              { value: 'all', label: 'All' },
-              ...resourceOptions.map((r) => ({ value: r, label: r })),
-            ]}
-          />
-          <SelectFilter
-            label="Purity"
-            value={purity}
-            onChange={setPurity}
-            options={[
-              { value: 'all', label: 'All' },
-              { value: 'impure', label: 'Impure' },
-              { value: 'normal', label: 'Normal' },
-              { value: 'pure', label: 'Pure' },
-            ]}
-          />
-          <SelectFilter
-            label="Node status"
-            value={nodeStatus}
-            onChange={(v) => setNodeStatus(v as 'all' | 'free' | 'occupied')}
-            options={[
-              { value: 'all', label: 'All' },
-              { value: 'free', label: 'Free' },
-              { value: 'occupied', label: 'Miner installed' },
-            ]}
-          />
-          <SelectFilter
-            label="Region"
-            value={region}
-            onChange={setRegion}
-            options={[
-              { value: 'all', label: 'All' },
-              ...regionOptions.map((r) => ({ value: r, label: r })),
-            ]}
-          />
-          {producesOpts.length > 0 && (
-            <SelectFilter
-              label="Produces"
-              value={produces}
-              onChange={setProduces}
-              options={[
-                { value: 'all', label: 'All' },
-                ...producesOpts.map((p) => ({ value: p, label: p })),
-              ]}
-            />
-          )}
-          {kindOptions.length > 0 && (
-            <SelectFilter
-              label="Pickup kind"
-              value={kind}
-              onChange={setKind}
-              options={[
-                { value: 'all', label: 'All' },
-                ...kindOptions.map((k) => ({ value: k, label: k })),
-              ]}
-            />
-          )}
-          <button
-            onClick={resetFilters}
-            className="rounded-md border border-surface-border bg-surface-raised px-2.5 py-1 text-xs text-slate-400 hover:text-slate-200"
-          >
-            Reset filters
-          </button>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <span className="flex items-center gap-2">
+            <span className="text-slate-400">Node purity:</span>
+            {(['impure', 'normal', 'pure'] as const).map((p) => (
+              <span key={p} className="flex items-center gap-1">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ background: PURITY_COLOR[p] }}
+                />
+                {p}
+              </span>
+            ))}
+          </span>
+          <span>
+            · Right-click to add a marker · dimmed = collected / miner installed · a specific
+            region shows only located features
+          </span>
         </div>
-        <span className="text-xs text-slate-500">
-          Right-click the map to add a marker · hollow = collected / miner installed · a
-          specific region shows only located features (nodes & pickups)
-        </span>
       </div>
 
       <Card className="relative min-h-[32rem] flex-1 !p-1">
@@ -328,7 +352,6 @@ export default function WorldMap() {
           <CursorTracker onMove={setCursor} />
 
           {features.map((f) => {
-            const style = FEATURE_STYLE[f.type];
             const stateSuffix =
               f.collected === true
                 ? ' (collected)'
@@ -337,61 +360,22 @@ export default function WorldMap() {
                   : f.occupied === false
                     ? ' (free)'
                     : '';
-            const detail = (
-              <>
-                <Tooltip direction="top" offset={[0, -8]}>
+            return (
+              <Marker key={f.id} position={toLatLng(f.position)} icon={featureIcon(f)}>
+                <Tooltip direction="top" offset={[0, -14]}>
                   {f.name + stateSuffix}
                 </Tooltip>
                 <Popup>
                   <strong>{f.name}</strong>
                   <br />
-                  {style.label.replace(/s$/, '') + stateSuffix}
+                  {FEATURE_LABEL[f.type].replace(/s$/, '') + stateSuffix}
                   {Object.entries(f.meta).map(([k, v]) => (
                     <div key={k}>
                       {k}: {String(v)}
                     </div>
                   ))}
                 </Popup>
-              </>
-            );
-            if (PICKUP_TYPES.has(f.type)) {
-              return (
-                <Marker
-                  key={f.id}
-                  position={toLatLng(f.position)}
-                  icon={pickupIcon(style.color, f.collected === true)}
-                >
-                  {detail}
-                </Marker>
-              );
-            }
-            const claimed = f.occupied === true;
-            return (
-              <CircleMarker
-                key={f.id}
-                center={toLatLng(f.position)}
-                radius={6}
-                pathOptions={
-                  claimed
-                    ? // Hollow + dashed: node already has an extractor.
-                      {
-                        color: style.color,
-                        weight: 2,
-                        dashArray: '3 3',
-                        fillColor: style.color,
-                        fillOpacity: 0.15,
-                        opacity: 0.7,
-                      }
-                    : {
-                        color: '#10131a',
-                        weight: 1.5,
-                        fillColor: style.color,
-                        fillOpacity: 0.95,
-                      }
-                }
-              >
-                {detail}
-              </CircleMarker>
+              </Marker>
             );
           })}
 
