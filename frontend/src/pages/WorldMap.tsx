@@ -12,11 +12,18 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import { Card } from '../components/Card';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWorld, useMarkers } from '../hooks/useWorld';
 import type { FeatureType } from '../types/world';
 import { fromLatLng, MAP_IMAGE_BOUNDS, MAP_IMAGE_URL, toLatLng } from '../utils/mapCoords';
-import { FEATURE_COLOR, featureIcon, PURITY_COLOR } from '../utils/mapIcons';
-import { applyWorldFilters, metaOptions, producesOptions } from '../utils/worldFilters';
+import { FEATURE_COLOR, featureIcon, pickupKindIconHtml, PURITY_COLOR } from '../utils/mapIcons';
+import {
+  applyWorldFilters,
+  metaOptions,
+  NODE_LIKE_TYPES,
+  pickupKindOptions,
+  producesOptions,
+} from '../utils/worldFilters';
 
 /** Legend labels per feature type; colors live in {@link FEATURE_COLOR}. */
 const FEATURE_LABEL: Record<FeatureType, string> = {
@@ -35,6 +42,13 @@ const FEATURE_LABEL: Record<FeatureType, string> = {
 const PICKUP_TYPES: ReadonlySet<FeatureType> = new Set(['artifact', 'collectible', 'wreck']);
 const PLAYER_COLOR = '#e66767';
 const MARKER_COLOR = '#94a3b8';
+
+/** A layer-visibility map with every feature type set to ``on``. */
+const allLayers = (on: boolean): Record<FeatureType, boolean> =>
+  Object.fromEntries((Object.keys(FEATURE_LABEL) as FeatureType[]).map((t) => [t, on])) as Record<
+    FeatureType,
+    boolean
+  >;
 
 /** Playable world extent in km (game is ~750×750 km at our 1 unit = 1 km scale). */
 const WORLD_BOUNDS: [[number, number], [number, number]] = [
@@ -100,45 +114,55 @@ function SelectFilter({ label, icon, value, options, onChange }: SelectFilterPro
 export default function WorldMap() {
   const { data: world, isLoading } = useWorld();
   const markers = useMarkers();
-  const [visible, setVisible] = useState<Record<FeatureType, boolean>>({
-    factory: true,
-    resource_node: true,
-    resource_well: true,
-    geyser: true,
-    power_plant: true,
-    train_station: true,
-    drone_port: true,
-    truck_station: true,
-    artifact: true,
-    collectible: true,
-    wreck: true,
-  });
+  // Filter state persists in localStorage. All layers start OFF by default so
+  // the map opens empty and the user enables just the layers they care about.
+  const [visible, setVisible] = useLocalStorage('spiffco.map.layers', allLayers(false));
+  const [hideCollected, setHideCollected] = useLocalStorage('spiffco.map.hideCollected', false);
+  const [showMap, setShowMap] = useLocalStorage('spiffco.map.background', true);
+  const [resource, setResource] = useLocalStorage('spiffco.map.resource', 'all');
+  const [purity, setPurity] = useLocalStorage('spiffco.map.purity', 'all');
+  const [nodeStatus, setNodeStatus] = useLocalStorage<'all' | 'free' | 'occupied'>(
+    'spiffco.map.nodeStatus',
+    'all',
+  );
+  const [pickupKinds, setPickupKinds] = useLocalStorage<Record<string, boolean>>(
+    'spiffco.map.pickupKinds',
+    {},
+  );
+  const [produces, setProduces] = useLocalStorage('spiffco.map.produces', 'all');
+  const [region, setRegion] = useLocalStorage('spiffco.map.region', 'all');
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
-  const [hideCollected, setHideCollected] = useState(false);
-  const [showMap, setShowMap] = useState(true);
   const [search, setSearch] = useState('');
-  const [resource, setResource] = useState('all');
-  const [purity, setPurity] = useState('all');
-  const [nodeStatus, setNodeStatus] = useState<'all' | 'free' | 'occupied'>('all');
-  const [kind, setKind] = useState('all');
-  const [produces, setProduces] = useState('all');
-  const [region, setRegion] = useState('all');
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [pendingName, setPendingName] = useState('');
 
   const allFeatures = useMemo(() => world?.features ?? [], [world]);
   const nodeFeatures = useMemo(
-    () => allFeatures.filter((f) => f.type === 'resource_node'),
-    [allFeatures],
-  );
-  const pickupFeatures = useMemo(
-    () => allFeatures.filter((f) => PICKUP_TYPES.has(f.type)),
+    () => allFeatures.filter((f) => NODE_LIKE_TYPES.has(f.type)),
     [allFeatures],
   );
   const resourceOptions = useMemo(() => metaOptions(nodeFeatures, 'resource'), [nodeFeatures]);
   const regionOptions = useMemo(() => metaOptions(allFeatures, 'region'), [allFeatures]);
-  const kindOptions = useMemo(() => metaOptions(pickupFeatures, 'kind'), [pickupFeatures]);
+  const kindOptions = useMemo(() => pickupKindOptions(allFeatures), [allFeatures]);
+  const kindCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const f of allFeatures) {
+      if (PICKUP_TYPES.has(f.type)) {
+        const k = String(f.meta.kind ?? '');
+        if (k) c[k] = (c[k] ?? 0) + 1;
+      }
+    }
+    return c;
+  }, [allFeatures]);
   const producesOpts = useMemo(() => producesOptions(allFeatures), [allFeatures]);
+
+  const toggleKind = (k: string) => setPickupKinds((v) => ({ ...v, [k]: !v[k] }));
+
+  /** Turn every layer and pickup kind on or off at once. */
+  const setAll = (on: boolean) => {
+    setVisible(allLayers(on));
+    setPickupKinds(Object.fromEntries(kindOptions.map((k) => [k, on])));
+  };
 
   const resetFilters = () => {
     setSearch('');
@@ -146,30 +170,25 @@ export default function WorldMap() {
     setResource('all');
     setPurity('all');
     setNodeStatus('all');
-    setKind('all');
     setProduces('all');
     setRegion('all');
-    setVisible((v) => {
-      const all = { ...v };
-      for (const t of Object.keys(all) as FeatureType[]) all[t] = true;
-      return all;
-    });
+    setAll(false); // back to the all-off default
   };
 
   const features = useMemo(
     () =>
       applyWorldFilters(allFeatures, {
         visible,
+        pickupKinds,
         search,
         hideCollected,
         resource,
         purity,
         nodeStatus,
-        kind,
         produces,
         region,
       }),
-    [allFeatures, visible, search, hideCollected, resource, purity, nodeStatus, kind, produces, region],
+    [allFeatures, visible, pickupKinds, search, hideCollected, resource, purity, nodeStatus, produces, region],
   );
 
   if (isLoading || !world) return <p className="text-sm text-slate-500">Loading world…</p>;
@@ -245,18 +264,6 @@ export default function WorldMap() {
               ]}
             />
           )}
-          {kindOptions.length > 0 && (
-            <SelectFilter
-              icon="✨"
-              label="Pickup kind"
-              value={kind}
-              onChange={setKind}
-              options={[
-                { value: 'all', label: 'All' },
-                ...kindOptions.map((k) => ({ value: k, label: k })),
-              ]}
-            />
-          )}
           <button
             onClick={resetFilters}
             className="flex items-center gap-1.5 rounded-md border border-surface-border bg-surface-raised px-2.5 py-1 text-xs text-slate-400 hover:text-slate-200"
@@ -265,35 +272,40 @@ export default function WorldMap() {
           </button>
         </div>
 
-        {/* Layer toggles + map background. */}
+        {/* Layer toggles (non-pickup types) + bulk enable/disable. */}
         <div className="flex flex-wrap gap-2 text-xs">
-          {(Object.keys(FEATURE_LABEL) as FeatureType[]).map((type) => (
-            <button
-              key={type}
-              onClick={() => setVisible((v) => ({ ...v, [type]: !v[type] }))}
-              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${
-                visible[type]
-                  ? 'border-surface-border bg-surface-raised text-slate-200'
-                  : 'border-transparent bg-surface-overlay text-slate-500'
-              }`}
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: FEATURE_COLOR[type], opacity: visible[type] ? 1 : 0.3 }}
-              />
-              {FEATURE_LABEL[type]}
-            </button>
-          ))}
           <button
-            onClick={() => setHideCollected((v) => !v)}
-            className={`rounded-full border px-2.5 py-1 transition-colors ${
-              hideCollected
-                ? 'border-accent/50 bg-accent/10 text-accent'
-                : 'border-surface-border bg-surface-raised text-slate-400'
-            }`}
+            onClick={() => setAll(true)}
+            className="rounded-full border border-emerald-600/50 bg-emerald-600/10 px-2.5 py-1 text-emerald-400 hover:bg-emerald-600/20"
           >
-            Hide collected
+            ✓ Enable all
           </button>
+          <button
+            onClick={() => setAll(false)}
+            className="rounded-full border border-surface-border bg-surface-raised px-2.5 py-1 text-slate-400 hover:text-slate-200"
+          >
+            ✕ Disable all
+          </button>
+          <span className="mx-1 w-px self-stretch bg-surface-border" />
+          {(Object.keys(FEATURE_LABEL) as FeatureType[])
+            .filter((type) => !PICKUP_TYPES.has(type))
+            .map((type) => (
+              <button
+                key={type}
+                onClick={() => setVisible((v) => ({ ...v, [type]: !v[type] }))}
+                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors ${
+                  visible[type]
+                    ? 'border-surface-border bg-surface-raised text-slate-200'
+                    : 'border-transparent bg-surface-overlay text-slate-500'
+                }`}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: FEATURE_COLOR[type], opacity: visible[type] ? 1 : 0.3 }}
+                />
+                {FEATURE_LABEL[type]}
+              </button>
+            ))}
           <button
             onClick={() => setShowMap((v) => !v)}
             className={`rounded-full border px-2.5 py-1 transition-colors ${
@@ -305,6 +317,42 @@ export default function WorldMap() {
             Map background
           </button>
         </div>
+
+        {/* Per-pickup toggles (each pickup kind has its own filter). */}
+        {kindOptions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-500">Pickups:</span>
+            {kindOptions.map((k) => (
+              <button
+                key={k}
+                onClick={() => toggleKind(k)}
+                className={`flex items-center gap-1.5 rounded-full border px-2 py-1 transition-colors ${
+                  pickupKinds[k]
+                    ? 'border-surface-border bg-surface-raised text-slate-200'
+                    : 'border-transparent bg-surface-overlay text-slate-500'
+                }`}
+              >
+                <span
+                  className="inline-flex h-4 w-4 items-center justify-center"
+                  style={{ opacity: pickupKinds[k] ? 1 : 0.4 }}
+                  dangerouslySetInnerHTML={{ __html: pickupKindIconHtml(k) }}
+                />
+                {k.replace(/-/g, ' ')}
+                <span className="tabular-nums text-slate-500">{kindCounts[k]}</span>
+              </button>
+            ))}
+            <button
+              onClick={() => setHideCollected((v) => !v)}
+              className={`rounded-full border px-2.5 py-1 transition-colors ${
+                hideCollected
+                  ? 'border-accent/50 bg-accent/10 text-accent'
+                  : 'border-surface-border bg-surface-raised text-slate-400'
+              }`}
+            >
+              Hide collected
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
           <span className="flex items-center gap-2">

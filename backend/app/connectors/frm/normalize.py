@@ -196,6 +196,17 @@ _NODE_TYPE_MAP = {
     "truckstation": "truck_station",
 }
 
+# FRM returns geysers and resource-well satellites in the generic resource-node
+# feed; reclassify them so the map's Geyser / Resource-well layers work. Geysers
+# feed geothermal generators; nitrogen gas and water are only obtained from
+# Resource Well Pressurizers, so those satellites are wells (crude oil keeps its
+# surface nodes, so it stays a resource_node).
+_NODE_FEATURE_TYPE: dict[str, FeatureType] = {
+    "geyser": "geyser",
+    "nitrogen-gas": "resource_well",
+    "water": "resource_well",
+}
+
 
 def _pickup_features(
     entries: Iterable[Raw],
@@ -281,16 +292,17 @@ def normalize_world(
         base = str(node.get("Name") or node.get("ResourceForm") or "Node")
         purity = str(node.get("Purity") or "normal").lower()
         occupied = bool(node.get("Exploited") or node.get("Occupied"))
+        resource = _slug(base)
         features.append(
             MapFeature(
                 # Purity is shown in the name (e.g. "Iron Ore (Pure)") and kept in
                 # meta for the purity filter; ``resource`` stays the base slug so
                 # the resource filter still groups nodes regardless of purity.
                 id=_slug(f"{base}-{node.get('ID', len(features))}"),
-                type="resource_node",
+                type=_NODE_FEATURE_TYPE.get(resource, "resource_node"),
                 name=f"{base} ({purity.capitalize()})",
                 position=_location(node),
-                meta={"resource": _slug(base), "purity": purity},
+                meta={"resource": resource, "purity": purity},
                 occupied=occupied,
             )
         )

@@ -141,6 +141,25 @@ def test_normalize_world_and_logistics() -> None:
     assert node.meta["resource"] == "iron-ore"
 
 
+def test_normalize_world_reclassifies_geysers_and_wells() -> None:
+    """Geysers and well-only resources leave the generic resource-node feed."""
+    nodes = [
+        {"Name": "Iron Ore", "location": {"x": 1, "y": 1, "z": 0}, "Purity": "Normal"},
+        {"Name": "Geyser", "location": {"x": 2, "y": 2, "z": 0}, "Purity": "Impure"},
+        {"Name": "Nitrogen Gas", "location": {"x": 3, "y": 3, "z": 0}, "Purity": "Pure"},
+        {"Name": "Water", "location": {"x": 4, "y": 4, "z": 0}, "Purity": "Normal"},
+    ]
+    world = normalize.normalize_world(FRM_PLAYER, [], nodes)
+    by_type = {f.type for f in world.features}
+    assert {"resource_node", "geyser", "resource_well"} <= by_type
+    assert next(f for f in world.features if f.meta.get("resource") == "iron-ore").type == (
+        "resource_node"
+    )
+    assert next(f for f in world.features if f.meta.get("resource") == "geyser").type == "geyser"
+    wells = {f.meta.get("resource") for f in world.features if f.type == "resource_well"}
+    assert wells == {"nitrogen-gas", "water"}
+
+
 def test_normalize_world_buildings_get_unique_ids_and_meta() -> None:
     """Every building is its own feature: same-class buildings must not collide.
 

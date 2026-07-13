@@ -3,6 +3,7 @@ import type { MapFeature } from '../types/world';
 import {
   applyWorldFilters,
   metaOptions,
+  pickupKindOptions,
   producesOptions,
   type WorldFilters,
 } from '../utils/worldFilters';
@@ -57,12 +58,12 @@ const DEFAULTS: WorldFilters = {
     collectible: true,
     wreck: true,
   },
+  pickupKinds: { somersloop: true, 'mercer-sphere': true },
   search: '',
   hideCollected: false,
   resource: 'all',
   purity: 'all',
   nodeStatus: 'all',
-  kind: 'all',
   produces: 'all',
   region: 'all',
 };
@@ -103,13 +104,15 @@ describe('applyWorldFilters', () => {
     expect(applyWorldFilters(FEATURES, { ...DEFAULTS, visible: noNodes })).toHaveLength(2);
   });
 
-  it('kind filter constrains only pickups', () => {
-    const ids = applyWorldFilters(FEATURES, { ...DEFAULTS, kind: 'somersloop' }).map((f) => f.id);
-    expect(ids).toContain('a1'); // matching pickup kept
-    expect(ids).toEqual(['f1', 'n1', 'n2', 'a1']); // non-pickups pass through
-    expect(
-      applyWorldFilters(FEATURES, { ...DEFAULTS, kind: 'mercer-sphere' }).map((f) => f.id),
-    ).not.toContain('a1'); // non-matching pickup dropped
+  it('pickups show only when their kind is enabled', () => {
+    // a1 (somersloop) hidden when its kind is off; non-pickups unaffected.
+    const off = applyWorldFilters(FEATURES, { ...DEFAULTS, pickupKinds: {} }).map((f) => f.id);
+    expect(off).toEqual(['f1', 'n1', 'n2']);
+    const on = applyWorldFilters(FEATURES, {
+      ...DEFAULTS,
+      pickupKinds: { somersloop: true },
+    }).map((f) => f.id);
+    expect(on).toContain('a1');
   });
 
   it('produces filter constrains only factories', () => {
@@ -125,6 +128,12 @@ describe('applyWorldFilters', () => {
 describe('producesOptions', () => {
   it('returns sorted distinct factory output items', () => {
     expect(producesOptions(FEATURES)).toEqual(['Iron Plate', 'Screw']);
+  });
+});
+
+describe('pickupKindOptions', () => {
+  it('returns sorted distinct pickup kinds', () => {
+    expect(pickupKindOptions(FEATURES)).toEqual(['somersloop']);
   });
 });
 
