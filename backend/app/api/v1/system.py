@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session, get_settings
 from app.config.settings import Settings
+from app.connectors.frm import ConnectionState, FrmConnector
 from app.schemas.system import AppInfo, HealthStatus, SettingValue
 from app.services import system_service
 
@@ -18,10 +19,18 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
+def _frm_health(request: Request) -> str:
+    """Map the FRM connector state to a health value (or ``not_configured``)."""
+    connector: FrmConnector | None = getattr(request.app.state, "frm", None)
+    if connector is None:
+        return "not_configured"
+    return "connected" if connector.state == ConnectionState.CONNECTED else "disconnected"
+
+
 @router.get("/health", response_model=HealthStatus)
-async def health(session: SessionDep, settings: SettingsDep) -> HealthStatus:
+async def health(request: Request, session: SessionDep, settings: SettingsDep) -> HealthStatus:
     """Report backend health including database and FRM connectivity."""
-    return await system_service.get_health(session, settings)
+    return await system_service.get_health(session, settings, _frm_health(request))
 
 
 @router.get("/info", response_model=AppInfo)

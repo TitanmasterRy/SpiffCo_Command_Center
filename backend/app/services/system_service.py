@@ -27,10 +27,14 @@ def get_app_info(settings: Settings) -> AppInfo:
     )
 
 
-async def get_health(session: AsyncSession, settings: Settings) -> HealthStatus:
+async def get_health(
+    session: AsyncSession, settings: Settings, frm: str = "not_configured"
+) -> HealthStatus:
     """Probe dependencies and report overall health.
 
-    The FRM state is ``not_configured`` until the Phase 11 connector lands.
+    Args:
+        frm: FRM connectivity — ``connected``/``disconnected`` when the connector
+            is active, else ``not_configured`` (running on simulated data).
     """
     try:
         await session.execute(text("SELECT 1"))
@@ -42,8 +46,8 @@ async def get_health(session: AsyncSession, settings: Settings) -> HealthStatus:
         status="ok" if database == "ok" else "degraded",
         version=__version__,
         environment=settings.environment.value,
-        database=database,  # type: ignore[arg-type]
-        frm="not_configured",
+        database=database,
+        frm=frm,
         uptime_seconds=time.monotonic() - _STARTED_AT,
         server_time=datetime.now(timezone.utc),
     )

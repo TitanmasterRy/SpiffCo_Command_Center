@@ -4,11 +4,12 @@ Current, deliberate limitations — each has a planned resolution.
 
 | Limitation | Why | Planned fix |
 |---|---|---|
-| No Alembic migrations (`create_all` only) | History tables are additive; `create_all` still safe | Introduce Alembic before the first schema *change* (not addition) |
-| Dashboard data is simulated | FRM connector is Phase 11 | Provider interface already in place; swap in FRM provider |
-| Frontend bundle >500 kB (Recharts) | Single chunk for simplicity | Code-split chart pages when more chart-heavy pages exist |
+| No Alembic migrations (`create_all` only) | Tables so far are additive; `create_all` still safe | Introduce Alembic before the first schema *change* (not addition) |
+| Providers are simulated unless `SPIFFCO_FRM_ENABLED` | Default install has no live game | Enable FRM to poll a live mod; falls back to simulation if unreachable |
+| FRM field mapping unvalidated against a live mod | Built without game access, from the FRM API shape | Validate/adjust `app/connectors/frm/normalize.py` against a running mod; capture fixtures |
+| FRM logistics routes are empty (nodes/trains only) | Belt/pipe throughput isn't exposed by FRM | Derive rail routes from train timetables; belts stay planner-only |
+| Frontend bundle >830 kB (Recharts/Leaflet) | Single chunk for simplicity | Code-split chart/map pages |
 | Auth settings exist but are not enforced | No remote-exposure features yet; localhost assumed | Auth middleware before documenting remote access |
-| FRM connector is an interface stub | Spec schedules integration for Phase 11 | Phase 11 (minimal read path may land earlier) |
 | Game data files are seed subsets | Hand-curated for planner development | `scripts/import_game_data.py` from game `Docs.json` |
 | Frontend types mirrored by hand | Contract is tiny | Generate from OpenAPI before the contract grows |
 | Single-process only (in-process bus, asyncio scheduler) | Self-hosted simplicity | Interfaces allow Redis-backed bus if ever needed |

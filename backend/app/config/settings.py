@@ -49,10 +49,14 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_file: str = ""
 
-    # Ficsit Remote Monitoring (used from Phase 11 onwards)
+    # Ficsit Remote Monitoring (Phase 11). When disabled (default), the app runs
+    # on the simulated providers. When enabled, it polls the FRM mod and falls
+    # back to simulation if the mod is unreachable at startup.
+    frm_enabled: bool = False
     frm_base_url: str = "http://localhost:8080"
     frm_poll_interval_seconds: float = 5.0
     frm_timeout_seconds: float = 5.0
+    frm_cache_ttl_seconds: float = 2.0
 
     # Background scheduler (periodic refresh/history jobs). Disabled in tests so
     # background DB writes never race request handlers on the shared connection.

@@ -6,6 +6,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 11: FRM Integration
+
+- Real Ficsit Remote Monitoring connector (`app/connectors/frm/`): an async HTTP
+  client with a timeout and short-TTL per-path cache (`client.py`), pure
+  normalizers mapping raw FRM payloads into the internal dashboard/world/logistics
+  schemas (`normalize.py`), and a background-polling `FrmConnector` that holds the
+  latest normalized snapshots and publishes connection-state changes on
+  `frm.status`.
+- FRM-backed providers (`providers.py`) satisfy the existing `snapshot()`
+  protocols, so the services run unchanged on live data. Selected at startup via
+  `SPIFFCO_FRM_ENABLED`; **falls back to the simulated providers** when FRM is
+  unreachable, so the app always boots. `/health` now reports the real FRM
+  connection state (`connected`/`disconnected`/`not_configured`).
+- Raw FRM shapes never leave the connector package. Field mapping is defensive
+  and based on the FRM API; it needs validation against a live mod (see
+  KNOWN_LIMITATIONS). Tested end-to-end with a fake HTTP transport — no game
+  required.
+
 ### Added — Phase 10: AI Advisor
 
 - Rule-based advisor engine (`app/advisors/engine.py`, pure) that derives ranked,

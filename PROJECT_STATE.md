@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 10 complete, Phase 11 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 11 complete, Phase 12 next (final)**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -240,13 +240,35 @@ live session factory and assert KPIs/ranking deterministically.
 mypy clean on new modules, live smoke of the advisor API (simulated state yields
 the over-capacity `Iron Plate Overflow` belt + `3 machines unpowered` warnings).
 
+### Phase 11 — FRM Integration
+
+**Backend** (`app/connectors/frm/`)
+- `FrmClient` (`client.py`): async httpx client with timeout + short-TTL per-path
+  cache + health probe; injectable transport for tests.
+- Pure normalizers (`normalize.py`): raw FRM payloads → dashboard/world/logistics
+  schemas, defensive (`.get` fallbacks). Raw FRM shapes never leave the package.
+- `FrmConnector` (`connector.py`): probes once on `start()` (raises if unreachable),
+  then polls in the background, caching the latest normalized snapshots; publishes
+  `frm.status`. FRM-backed providers (`providers.py`) satisfy the sync `snapshot()`
+  protocols so services run unchanged.
+- Wired in `main.py`: `SPIFFCO_FRM_ENABLED` selects FRM vs. simulation, with
+  **fallback to simulation** when FRM is unreachable; `/health` reports the real
+  FRM state. New settings: `frm_enabled`, `frm_cache_ttl_seconds` (+ existing).
+
+**Frontend**: none needed — the top-bar FRM badge already reads `health.frm`.
+
+**Verified end-to-end**: pytest 76/76, ruff + mypy clean on new modules; FRM tests
+drive normalization/caching/polling via a fake httpx transport, and a live smoke
+confirms FRM-enabled-but-unreachable boots on simulation (`health.frm =
+not_configured`, `dashboard.source = simulation`). Full live validation needs a
+running mod (see `docs/KNOWN_LIMITATIONS.md`).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
 The Factories and Resources pages exist only as placeholder stubs
@@ -271,30 +293,32 @@ Dashboard, resource nodes on the World Map.)
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 11 — FRM Integration
+### Primary goal: Phase 12 — Offline Mode (final phase)
 
-Replace the simulated providers with a real Ficsit Remote Monitoring connector:
-discovery, health, reconnect, caching, and normalization into the existing
-schemas. The provider interfaces (`GameStateProvider`, `WorldProvider`,
-`LogisticsProvider`) already exist, so this is a drop-in behind them. Suggested
-order:
+Read a Satisfactory save file so plans/analysis work with no live game. This is
+the last spec phase. Suggested order:
 
-1. **FRM client** (`app/connectors/frm/` — interface scaffold exists):
-   - Async HTTP client over the FRM mod's endpoints (`getFactory`, `getPower`,
-     `getPlayer`, `getResourceNode`, `getTrains`, …) at `SPIFFCO_FRM_BASE_URL`,
-     with timeout, health check, and short-TTL caching to avoid hammering the mod.
-   - Normalize raw FRM JSON into the internal schemas (dashboard/world/logistics)
-     — never expose raw FRM shapes past the provider.
-2. **FRM-backed providers** that implement the existing provider protocols; select
-   FRM vs. simulation from settings/health at startup, and **fall back to
-   simulation** when FRM is unreachable (publish `frm.status`).
-3. **Health surface**: reflect FRM connection state in `/health` and the top-bar
-   FRM badge (already present).
-4. **Tests**: normalization from captured FRM fixtures, cache/timeout behavior,
-   and fallback selection (use a fake HTTP transport — no live game required).
+1. **Save parser** (`app/world/` or a new `app/offline/` module):
+   - Parse a `.sav` (the Satisfactory save format is documented by the community;
+     consider an existing parser lib, else a minimal reader for the subset we
+     need: buildings, power, resource nodes, players). Normalize into the same
+     dashboard/world/logistics schemas — a third provider alongside sim/FRM.
+   - Endpoint to upload/select a save; a `SaveFileProvider` implementing the
+     `snapshot()` protocol (static — no polling).
+2. **Frontend**: a save upload/selector (Settings or a new page) and a "data
+   source" indicator (simulation / FRM / save file).
+3. **Tests**: parse a small fixture save into the normalized schemas.
 
-Note: full validation needs a live game; build against captured/fixture FRM
-payloads and keep the simulated providers as the default when FRM is absent.
+Note: the `.sav` format is complex; scope to the fields the app already uses and
+keep the provider optional. Full parity with a live mod is not required.
+
+### After Phase 12 — hardening backlog (post-spec)
+
+- **Alembic bootstrap** (overdue — `factory_plans`, `plan_versions`, `blueprints`).
+- **Validate FRM normalization** against a live mod; capture fixtures.
+- **OpenAPI-generated frontend types**; **code-split** the >830 kB bundle.
+- **History retention/pruning** job; **auth enforcement** middleware; **E2E** tests.
+- **Visual browser pass** over every page (never yet eyeballed in a browser).
 
 ### Housekeeping (small, high value — carried forward)
 
