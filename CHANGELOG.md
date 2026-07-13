@@ -6,6 +6,31 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 12: Offline Mode (final spec phase)
+
+- Save-file parser (`app/offline/save_parser.py`, pure/no-I/O): reads the `.sav`
+  header exactly (session name, map, build version, play time, save timestamp)
+  and inflates the compressed body by scanning for its zlib streams — robust
+  across save-format versions. Buildings are counted by matching actor instance
+  names (`Build_..._C_<id>`), enough to drive machine counts and a power estimate
+  without the fragile full property deserialization.
+- `SaveDataSource` + three providers (`app/offline/provider.py`) reshape a parsed
+  save into the existing dashboard/world/logistics schemas — reusing the FRM
+  normalizers with a new `source="save"` — so the services run unchanged. An
+  `OfflineManager` swaps every service between the base source (simulation/FRM)
+  and a loaded save at runtime, and restores it on clear.
+- Endpoints under `/api/v1/offline`: `GET /status`, `POST /save` (multipart
+  upload, size-limited via `SPIFFCO_SAVE_MAX_UPLOAD_MB`), `DELETE /save`.
+- Building-class catalog (`app/offline/building_map.py`) maps `Build_..._C`
+  classes to display names, categories, and nominal power.
+- Frontend **Offline Mode** page (`/offline`): upload a `.sav`, see the parsed
+  session summary (machines, generators, estimated power, per-building table),
+  and return to live data. A data-source badge in the top bar shows
+  simulation / live game / save file globally.
+- Limits (see KNOWN_LIMITATIONS): positions and inventories are not extracted, so
+  power figures are estimates and the World Map / Logistics pages are not
+  populated from saves.
+
 ### Added — Phase 11: FRM Integration
 
 - Real Ficsit Remote Monitoring connector (`app/connectors/frm/`): an async HTTP

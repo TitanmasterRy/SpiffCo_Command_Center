@@ -27,6 +27,10 @@ class WorldService:
         self._bus = bus
         self._latest: WorldSnapshot | None = None
 
+    def use_provider(self, provider: WorldProvider) -> None:
+        """Swap the data source (e.g. simulation/FRM ⇄ save file) at runtime."""
+        self._provider = provider
+
     @property
     def latest(self) -> WorldSnapshot:
         """Most recent world snapshot; 503 until the first refresh."""

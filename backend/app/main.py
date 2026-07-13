@@ -28,6 +28,7 @@ from app.connectors.frm import (
 from app.database.engine import get_session_factory, init_database, shutdown_database
 from app.errors import UpstreamUnavailableError, register_exception_handlers
 from app.logistics.service import LogisticsProvider, LogisticsService
+from app.offline import OfflineManager
 from app.services.event_bus import EventBus
 from app.services.game_state import GameStateProvider, GameStateService
 from app.simulation.logistics import SimulatedLogisticsProvider
@@ -127,6 +128,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logistics = LogisticsService(logistics_provider, bus)
     app.state.logistics = logistics
     await logistics.refresh()
+
+    # Offline mode: lets a save file replace the live source at runtime.
+    app.state.offline = OfflineManager(
+        game_state=game_state,
+        world=world,
+        logistics=logistics,
+        base_game=game_provider,
+        base_world=world_provider,
+        base_logistics=logistics_provider,
+        base_source="frm" if frm is not None else "simulation",
+    )
 
     scheduler = Scheduler()
     _register_jobs(scheduler, bus, game_state, world, logistics)

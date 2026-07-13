@@ -57,7 +57,7 @@ class WorldSnapshot(BaseModel):
     """Static features plus live player positions."""
 
     generated_at: datetime
-    source: Literal["simulation", "frm"]
+    source: Literal["simulation", "frm", "save"]
     players: list[PlayerInfo]
     features: list[MapFeature]
 

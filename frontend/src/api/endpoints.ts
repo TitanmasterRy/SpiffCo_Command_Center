@@ -22,7 +22,9 @@ import type { LogisticsSnapshot, TransportData } from '../types/logistics';
 import type { PowerBuildingInfo, PowerReport } from '../types/power';
 import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
 import type { CustomMarker, CustomMarkerIn, WorldSnapshot } from '../types/world';
-import { apiFetch } from './http';
+import type { OfflineStatus } from '../types/offline';
+import { ApiError, apiFetch } from './http';
+import type { ApiErrorBody } from '../types/api';
 
 /** Typed functions for every backend endpoint, grouped by domain. */
 export const api = {
@@ -78,6 +80,31 @@ export const api = {
   },
   advisor: {
     report: () => apiFetch<AdvisorReport>('/api/v1/advisor'),
+  },
+  offline: {
+    status: () => apiFetch<OfflineStatus>('/api/v1/offline/status'),
+    // Multipart upload — cannot go through apiFetch (which forces JSON headers).
+    uploadSave: async (file: File): Promise<OfflineStatus> => {
+      const form = new FormData();
+      form.append('file', file);
+      const response = await fetch('/api/v1/offline/save', { method: 'POST', body: form });
+      if (!response.ok) {
+        let errorBody: ApiErrorBody['error'] = {
+          code: 'unknown_error',
+          message: `Upload failed with status ${response.status}`,
+          details: {},
+        };
+        try {
+          const parsed = (await response.json()) as ApiErrorBody;
+          if (parsed?.error) errorBody = parsed.error;
+        } catch {
+          // Non-JSON error body — keep the fallback.
+        }
+        throw new ApiError(response.status, errorBody);
+      }
+      return (await response.json()) as OfflineStatus;
+    },
+    clearSave: () => apiFetch<OfflineStatus>('/api/v1/offline/save', { method: 'DELETE' }),
   },
   production: {
     plan: (request: ProductionRequest) =>

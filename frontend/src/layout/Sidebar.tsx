@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/blueprints', label: 'Blueprints', icon: '📐' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/advisor', label: 'Advisor', icon: '🧠' },
+  { to: '/offline', label: 'Offline Mode', icon: '💾' },
   { to: '/settings', label: 'Settings', icon: '🛠' },
 ] as const;
 

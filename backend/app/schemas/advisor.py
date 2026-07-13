@@ -41,6 +41,6 @@ class AdvisorReport(BaseModel):
     """Ranked advisor findings plus per-severity counts."""
 
     generated_at: datetime
-    source: Literal["simulation", "frm"]
+    source: Literal["simulation", "frm", "save"]
     findings: list[AdvisorFinding]
     counts: dict[str, int] = Field(description="severity -> count")

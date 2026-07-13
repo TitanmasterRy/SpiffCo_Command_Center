@@ -11,20 +11,20 @@ world map, planning tools, and an advisor engine — all in one unified web inte
 
 ## Status
 
-**Phases 1–2 complete** (foundation + dashboard, on simulated data until FRM lands).
-See [PROJECT_STATE.md](PROJECT_STATE.md) for the full complete/incomplete breakdown
-and [docs/ROADMAP.md](docs/ROADMAP.md) for the 12-phase plan.
+**All 12 spec phases complete.** The app runs on simulated data by default, on a
+live game via the Ficsit Remote Monitoring mod (`SPIFFCO_FRM_ENABLED`), or on an
+uploaded save file (Offline Mode). See [PROJECT_STATE.md](PROJECT_STATE.md) for
+the full breakdown and [docs/ROADMAP.md](docs/ROADMAP.md) for the phase plan; the
+remaining work is the post-spec hardening backlog.
 
 | Area | Status |
 |---|---|
-| Backend API framework (FastAPI) | ✅ |
-| Configuration & logging | ✅ |
-| Error handling | ✅ |
-| Database layer (SQLite / SQLAlchemy) | ✅ |
-| WebSocket server & event bus | ✅ |
-| Background task scheduler | ✅ |
-| Frontend shell (React + Vite + Tailwind) | ✅ |
-| Dashboard, Map, Planner, … | 🚧 Later phases |
+| Foundation (API, config, logging, DB, WebSockets, scheduler) | ✅ |
+| Dashboard, World Map, Factory & Production Planners | ✅ |
+| Logistics, Power, Blueprints, Analytics, AI Advisor | ✅ |
+| FRM integration (live game, with simulation fallback) | ✅ |
+| Offline Mode (save-file upload) | ✅ |
+| Post-spec hardening (Alembic, auth, E2E, code-split) | 🚧 Backlog |
 
 ## Quick start
 

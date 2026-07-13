@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 11 complete, Phase 12 next (final)**
+Last updated: **2026-07-13** · Current milestone: **All 12 spec phases complete** — post-spec hardening backlog remains
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -263,13 +263,39 @@ confirms FRM-enabled-but-unreachable boots on simulation (`health.frm =
 not_configured`, `dashboard.source = simulation`). Full live validation needs a
 running mod (see `docs/KNOWN_LIMITATIONS.md`).
 
+### Phase 12 — Offline Mode (final spec phase)
+
+**Backend** (`app/offline/`, `app/api/v1/offline.py`)
+- Pure save parser (`save_parser.py`): parses the `.sav` header (session name,
+  map, build version, play duration, save timestamp) and inflates the compressed
+  body by scanning for zlib streams (version-robust); counts buildings from actor
+  instance names (`Build_..._C_<id>`). Raises `SaveParseError` on non-saves.
+- Building catalog (`building_map.py`): `Build_..._C` → display name / category /
+  nominal power. `SaveDataSource` + `SaveGame/World/LogisticsProvider`
+  (`provider.py`) reshape the parse into the existing schemas via the FRM
+  normalizers with `source="save"`. `OfflineManager` (`manager.py`) swaps every
+  service between the base source and a loaded save, restoring it on clear.
+- Endpoints: `GET /api/v1/offline/status`, `POST /api/v1/offline/save` (multipart,
+  `SPIFFCO_SAVE_MAX_UPLOAD_MB`-limited), `DELETE /api/v1/offline/save`. Schemas in
+  `app/schemas/offline.py`. `use_provider` added to World/Logistics services.
+
+**Frontend** (`pages/Offline.tsx`, route `/offline`, new sidebar entry)
+- Save upload + parsed session summary (machines, generators, estimated power,
+  per-building table) and a "return to live data" action. Hooks in
+  `hooks/useOffline.ts` (upload invalidates all server-state queries); types in
+  `types/offline.ts`. A data-source badge in the top bar shows
+  simulation / live game / save file globally.
+
+**Verified end-to-end**: pytest 82/82, vitest 40/40, `tsc`/build clean, ruff +
+mypy clean on new modules, live lifespan smoke (upload a synthetic save →
+dashboard `source` flips to `save` with correct machine/power rollups → clear
+restores simulation).
+
+**Limits**: positions/inventories are not extracted, so power figures are
+estimates and the World Map / Logistics pages are not populated from saves (see
+`docs/KNOWN_LIMITATIONS.md`).
+
 ## 🚧 Incomplete
-
-### Phases not started
-
-| Phase | Scope |
-|---|---|
-| 12 — Offline Mode | Save-file parsing, planning without a live game |
 
 The Factories and Resources pages exist only as placeholder stubs
 (`frontend/src/pages/stubs.tsx`); their backend packages are empty scaffolds.
@@ -293,26 +319,13 @@ Dashboard, resource nodes on the World Map.)
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 12 — Offline Mode (final phase)
+### All 12 spec phases are complete.
 
-Read a Satisfactory save file so plans/analysis work with no live game. This is
-the last spec phase. Suggested order:
+The remaining work is the post-spec hardening backlog below plus the offline
+parser's follow-up (per-actor transform parsing to populate the map/logistics
+from saves and replace estimated power with recipe/clock-derived figures).
 
-1. **Save parser** (`app/world/` or a new `app/offline/` module):
-   - Parse a `.sav` (the Satisfactory save format is documented by the community;
-     consider an existing parser lib, else a minimal reader for the subset we
-     need: buildings, power, resource nodes, players). Normalize into the same
-     dashboard/world/logistics schemas — a third provider alongside sim/FRM.
-   - Endpoint to upload/select a save; a `SaveFileProvider` implementing the
-     `snapshot()` protocol (static — no polling).
-2. **Frontend**: a save upload/selector (Settings or a new page) and a "data
-   source" indicator (simulation / FRM / save file).
-3. **Tests**: parse a small fixture save into the normalized schemas.
-
-Note: the `.sav` format is complex; scope to the fields the app already uses and
-keep the provider optional. Full parity with a live mod is not required.
-
-### After Phase 12 — hardening backlog (post-spec)
+### Hardening backlog (post-spec)
 
 - **Alembic bootstrap** (overdue — `factory_plans`, `plan_versions`, `blueprints`).
 - **Validate FRM normalization** against a live mod; capture fixtures.

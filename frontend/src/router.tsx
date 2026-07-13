@@ -6,6 +6,7 @@ import Advisor from './pages/Advisor';
 import Analytics from './pages/Analytics';
 import Blueprints from './pages/Blueprints';
 import Logistics from './pages/Logistics';
+import Offline from './pages/Offline';
 import Planner from './pages/Planner';
 import Power from './pages/Power';
 import Settings from './pages/Settings';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: 'blueprints', element: <Blueprints /> },
       { path: 'analytics', element: <Analytics /> },
       { path: 'advisor', element: <Advisor /> },
+      { path: 'offline', element: <Offline /> },
       { path: 'settings', element: <Settings /> },
     ],
   },

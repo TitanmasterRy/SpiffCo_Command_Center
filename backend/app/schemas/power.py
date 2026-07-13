@@ -56,7 +56,7 @@ class PowerReport(BaseModel):
     """Complete power page payload: live stats, analysis, history, tips."""
 
     generated_at: datetime
-    source: Literal["simulation", "frm"]
+    source: Literal["simulation", "frm", "save"]
     power: PowerStats
     headroom_mw: float = Field(description="capacity - consumed (negative = over capacity)")
     headroom_percent: float = Field(description="headroom / capacity (0..1; negative if over)")

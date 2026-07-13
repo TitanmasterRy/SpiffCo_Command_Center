@@ -163,13 +163,15 @@ def normalize_dashboard(
     power_raw: Iterable[Raw],
     factory_raw: Iterable[Raw],
     inventory_raw: Iterable[Raw] | None = None,
+    *,
+    source: str = "frm",
 ) -> DashboardSnapshot:
     """Build a dashboard snapshot from FRM power/factory/inventory payloads."""
     factory_list = list(factory_raw)
     factories, machines = _factory_groups(factory_list)
     return DashboardSnapshot(
         generated_at=datetime.now(UTC),
-        source="frm",
+        source=source,
         power=normalize_power(power_raw),
         machines=machines,
         factories=factories,
@@ -191,6 +193,8 @@ def normalize_world(
     players_raw: Iterable[Raw],
     factory_raw: Iterable[Raw],
     nodes_raw: Iterable[Raw],
+    *,
+    source: str = "frm",
 ) -> WorldSnapshot:
     """Build a world snapshot from FRM players / factories / resource nodes."""
     players = [
@@ -223,12 +227,15 @@ def normalize_world(
             )
         )
     return WorldSnapshot(
-        generated_at=datetime.now(UTC), source="frm", players=players, features=features
+        generated_at=datetime.now(UTC),
+        source=source,
+        players=players,
+        features=features,
     )
 
 
 def normalize_logistics(
-    stations_raw: Iterable[Raw], trains_raw: Iterable[Raw]
+    stations_raw: Iterable[Raw], trains_raw: Iterable[Raw], *, source: str = "frm"
 ) -> LogisticsSnapshot:
     """Build a logistics snapshot from FRM train stations and trains."""
     nodes = [
@@ -252,7 +259,7 @@ def normalize_logistics(
     ]
     return LogisticsSnapshot(
         generated_at=datetime.now(UTC),
-        source="frm",
+        source=source,
         nodes=nodes,
         routes=[],  # belt/pipe throughput is not exposed by FRM; rail routes TBD
         trains=trains,

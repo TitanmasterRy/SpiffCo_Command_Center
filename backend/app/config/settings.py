@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     frm_timeout_seconds: float = 5.0
     frm_cache_ttl_seconds: float = 2.0
 
+    # Offline mode (Phase 12): maximum accepted save-file upload size.
+    save_max_upload_mb: int = 100
+
     # Background scheduler (periodic refresh/history jobs). Disabled in tests so
     # background DB writes never race request handlers on the shared connection.
     scheduler_enabled: bool = True

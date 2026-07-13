@@ -23,6 +23,10 @@ class LogisticsService:
         self._bus = bus
         self._latest: LogisticsSnapshot | None = None
 
+    def use_provider(self, provider: LogisticsProvider) -> None:
+        """Swap the data source (e.g. simulation/FRM ⇄ save file) at runtime."""
+        self._provider = provider
+
     @property
     def latest(self) -> LogisticsSnapshot:
         """Most recent snapshot; 503 until the first refresh."""

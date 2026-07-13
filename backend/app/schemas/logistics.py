@@ -105,7 +105,7 @@ class LogisticsSnapshot(BaseModel):
     """The full logistics network plus live trains and a summary."""
 
     generated_at: datetime
-    source: Literal["simulation", "frm"]
+    source: Literal["simulation", "frm", "save"]
     nodes: list[LogisticsNode]
     routes: list[LogisticsRoute]
     trains: list[TrainInfo]

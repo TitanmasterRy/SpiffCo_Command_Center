@@ -73,7 +73,7 @@ class DashboardSnapshot(BaseModel):
     """Complete dashboard state pushed on topic ``dashboard.snapshot``."""
 
     generated_at: datetime
-    source: Literal["simulation", "frm"]
+    source: Literal["simulation", "frm", "save"]
     power: PowerStats
     machines: MachineSummary
     factories: list[FactoryStatus]

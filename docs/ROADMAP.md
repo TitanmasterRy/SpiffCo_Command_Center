@@ -16,7 +16,7 @@ every step.
 | 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ✅ done |
 | 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ✅ done (rule-based over simulated data) |
 | 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ✅ done (polling connector + fallback; field mapping needs live validation) |
-| 12 | **Offline Mode** — save-file reading, planning without a live game | ⬜ next |
+| 12 | **Offline Mode** — save-file reading, planning without a live game | ✅ done (header + building-count parser; positions not extracted) |
 
 ## Cross-cutting backlog
 

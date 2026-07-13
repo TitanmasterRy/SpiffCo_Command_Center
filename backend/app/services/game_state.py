@@ -35,6 +35,10 @@ class GameStateService:
         self._bus = bus
         self._latest: DashboardSnapshot | None = None
 
+    def use_provider(self, provider: GameStateProvider) -> None:
+        """Swap the data source (e.g. simulation ⇄ save file) at runtime."""
+        self._provider = provider
+
     @property
     def latest(self) -> DashboardSnapshot:
         """Most recent snapshot; 503 until the first refresh has run."""
