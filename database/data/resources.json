@@ -1,0 +1,17 @@
+{
+  "$schema_note": "Raw resources extractable from the world.",
+  "resources": [
+    { "id": "iron-ore", "name": "Iron Ore", "extractor": "miner", "is_fluid": false },
+    { "id": "copper-ore", "name": "Copper Ore", "extractor": "miner", "is_fluid": false },
+    { "id": "limestone", "name": "Limestone", "extractor": "miner", "is_fluid": false },
+    { "id": "coal", "name": "Coal", "extractor": "miner", "is_fluid": false },
+    { "id": "caterium-ore", "name": "Caterium Ore", "extractor": "miner", "is_fluid": false },
+    { "id": "raw-quartz", "name": "Raw Quartz", "extractor": "miner", "is_fluid": false },
+    { "id": "sulfur", "name": "Sulfur", "extractor": "miner", "is_fluid": false },
+    { "id": "bauxite", "name": "Bauxite", "extractor": "miner", "is_fluid": false },
+    { "id": "uranium", "name": "Uranium", "extractor": "miner", "is_fluid": false },
+    { "id": "crude-oil", "name": "Crude Oil", "extractor": "oil-extractor", "is_fluid": true },
+    { "id": "water", "name": "Water", "extractor": "water-extractor", "is_fluid": true },
+    { "id": "nitrogen-gas", "name": "Nitrogen Gas", "extractor": "resource-well", "is_fluid": true }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema_note": "World pickups. category: artifact (somersloops, mercer spheres, power slugs) | collectible (food/consumables) | wreck (crash sites). Positions in cm. Collected state is per-save (live data), not stored here. Seed subset.",
+  "collectibles": [
+    { "id": "sloop-grassfields-01", "category": "artifact", "name": "Somersloop", "position": { "x": -75500, "y": 152800, "z": 2100 }, "meta": { "kind": "somersloop", "region": "Grass Fields" } },
+    { "id": "sloop-rockydesert-01", "category": "artifact", "name": "Somersloop", "position": { "x": -24800, "y": 117400, "z": 7200 }, "meta": { "kind": "somersloop", "region": "Rocky Desert" } },
+    { "id": "sphere-grassfields-01", "category": "artifact", "name": "Mercer Sphere", "position": { "x": -64200, "y": 155600, "z": 1800 }, "meta": { "kind": "mercer-sphere", "region": "Grass Fields" } },
+    { "id": "sphere-northernforest-01", "category": "artifact", "name": "Mercer Sphere", "position": { "x": 12400, "y": -99800, "z": 13500 }, "meta": { "kind": "mercer-sphere", "region": "Northern Forest" } },
+    { "id": "slug-green-grassfields-01", "category": "artifact", "name": "Power Slug (green)", "position": { "x": -70800, "y": 144100, "z": 1600 }, "meta": { "kind": "power-slug-green", "region": "Grass Fields" } },
+    { "id": "slug-yellow-rockydesert-01", "category": "artifact", "name": "Power Slug (yellow)", "position": { "x": -17600, "y": 125200, "z": 6800 }, "meta": { "kind": "power-slug-yellow", "region": "Rocky Desert" } },
+    { "id": "berry-grassfields-01", "category": "collectible", "name": "Paleberry", "position": { "x": -73100, "y": 147900, "z": 1500 }, "meta": { "kind": "paleberry", "region": "Grass Fields" } },
+    { "id": "berry-grassfields-02", "category": "collectible", "name": "Paleberry", "position": { "x": -66900, "y": 150200, "z": 1550 }, "meta": { "kind": "paleberry", "region": "Grass Fields" } },
+    { "id": "nut-rockydesert-01", "category": "collectible", "name": "Beryl Nut", "position": { "x": -22300, "y": 120700, "z": 6400 }, "meta": { "kind": "beryl-nut", "region": "Rocky Desert" } },
+    { "id": "agaric-northernforest-01", "category": "collectible", "name": "Bacon Agaric", "position": { "x": 6800, "y": -91200, "z": 11800 }, "meta": { "kind": "bacon-agaric", "region": "Northern Forest" } },
+    { "id": "wreck-grassfields-01", "category": "wreck", "name": "Crash Site (Hard Drive)", "position": { "x": -58400, "y": 158900, "z": 2600 }, "meta": { "kind": "crash-site", "loot": "hard-drive", "region": "Grass Fields" } },
+    { "id": "wreck-rockydesert-01", "category": "wreck", "name": "Crash Site (Hard Drive)", "position": { "x": -14100, "y": 113600, "z": 8100 }, "meta": { "kind": "crash-site", "loot": "hard-drive", "region": "Rocky Desert" } },
+    { "id": "wreck-northernforest-01", "category": "wreck", "name": "Crash Site (Hard Drive)", "position": { "x": 15800, "y": -86400, "z": 12900 }, "meta": { "kind": "crash-site", "loot": "hard-drive", "region": "Northern Forest" } }
+  ]
+}

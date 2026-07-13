@@ -1,0 +1,10 @@
+{
+  "$schema_note": "Generators: power_mw is output. fuel_rate is items or m3 per minute at 100%.",
+  "power_buildings": [
+    { "id": "biomass-burner", "name": "Biomass Burner", "power_mw": 30, "fuel": "solid-biofuel", "fuel_rate": 4.5, "requires_water": false },
+    { "id": "coal-generator", "name": "Coal-Powered Generator", "power_mw": 75, "fuel": "coal", "fuel_rate": 15, "requires_water": true, "water_rate": 45 },
+    { "id": "fuel-generator", "name": "Fuel-Powered Generator", "power_mw": 250, "fuel": "fuel", "fuel_rate": 20, "requires_water": false },
+    { "id": "nuclear-power-plant", "name": "Nuclear Power Plant", "power_mw": 2500, "fuel": "uranium-fuel-rod", "fuel_rate": 0.2, "requires_water": true, "water_rate": 240 },
+    { "id": "power-storage", "name": "Power Storage", "power_mw": 0, "capacity_mwh": 100, "max_charge_mw": 100 }
+  ]
+}

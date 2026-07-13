@@ -1,0 +1,11 @@
+{
+  "$schema_note": "Unit conventions used across the entire codebase.",
+  "units": {
+    "item_rate": "items per minute",
+    "fluid_rate": "cubic meters per minute",
+    "power": "megawatts (MW)",
+    "energy": "megawatt hours (MWh)",
+    "world_position": "centimeters (Unreal world units)",
+    "clock_speed": "fraction (1.0 = 100%, max 2.5)"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema_note": "Canonical WebSocket/event-bus topic names. Backend publishes; frontend subscribes. Wildcards: 'power.*', '*'.",
+  "topics": {
+    "system.heartbeat": "Scheduler liveness ping (Phase 1)",
+    "dashboard.snapshot": "Full dashboard snapshot every poll interval (Phase 2)",
+    "frm.status": "FRM connection state changes (Phase 11)",
+    "factory.status": "Per-factory status snapshots (Phase 2)",
+    "power.grid": "Power grid snapshots (Phase 2/7)",
+    "production.stats": "Production rate snapshots (Phase 2)",
+    "world.players": "Live player positions every poll interval (Phase 3)",
+    "logistics.trains": "Train positions and states (Phase 6)",
+    "alerts": "Advisor and system alerts (Phase 10)"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema_note": "Same shape as recipes.json plus unlock info.",
+  "recipes": [
+    {
+      "id": "alt-cast-screw",
+      "name": "Alternate: Cast Screw",
+      "machine": "constructor",
+      "duration_seconds": 24,
+      "unlock": "hard-drive",
+      "inputs": [{ "item": "iron-ingot", "rate": 12.5 }],
+      "outputs": [{ "item": "screw", "rate": 50 }]
+    },
+    {
+      "id": "alt-stitched-iron-plate",
+      "name": "Alternate: Stitched Iron Plate",
+      "machine": "assembler",
+      "duration_seconds": 32,
+      "unlock": "hard-drive",
+      "inputs": [
+        { "item": "iron-plate", "rate": 18.75 },
+        { "item": "wire", "rate": 37.5 }
+      ],
+      "outputs": [{ "item": "reinforced-iron-plate", "rate": 5.625 }]
+    }
+  ]
+}

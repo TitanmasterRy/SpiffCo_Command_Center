@@ -1,0 +1,20 @@
+{
+  "$schema_note": "See docs/DATABASE_SCHEMA.md. Seed subset — full import via scripts/import_game_data.py (planned).",
+  "items": [
+    { "id": "iron-ore", "name": "Iron Ore", "category": "ore", "stack_size": 100, "is_fluid": false, "sink_points": 1 },
+    { "id": "copper-ore", "name": "Copper Ore", "category": "ore", "stack_size": 100, "is_fluid": false, "sink_points": 3 },
+    { "id": "limestone", "name": "Limestone", "category": "ore", "stack_size": 100, "is_fluid": false, "sink_points": 2 },
+    { "id": "coal", "name": "Coal", "category": "ore", "stack_size": 100, "is_fluid": false, "sink_points": 3 },
+    { "id": "iron-ingot", "name": "Iron Ingot", "category": "ingot", "stack_size": 100, "is_fluid": false, "sink_points": 2 },
+    { "id": "copper-ingot", "name": "Copper Ingot", "category": "ingot", "stack_size": 100, "is_fluid": false, "sink_points": 6 },
+    { "id": "concrete", "name": "Concrete", "category": "part", "stack_size": 500, "is_fluid": false, "sink_points": 12 },
+    { "id": "iron-plate", "name": "Iron Plate", "category": "part", "stack_size": 200, "is_fluid": false, "sink_points": 6 },
+    { "id": "iron-rod", "name": "Iron Rod", "category": "part", "stack_size": 200, "is_fluid": false, "sink_points": 4 },
+    { "id": "screw", "name": "Screw", "category": "part", "stack_size": 500, "is_fluid": false, "sink_points": 2 },
+    { "id": "wire", "name": "Wire", "category": "part", "stack_size": 500, "is_fluid": false, "sink_points": 6 },
+    { "id": "cable", "name": "Cable", "category": "part", "stack_size": 200, "is_fluid": false, "sink_points": 24 },
+    { "id": "reinforced-iron-plate", "name": "Reinforced Iron Plate", "category": "part", "stack_size": 100, "is_fluid": false, "sink_points": 120 },
+    { "id": "water", "name": "Water", "category": "fluid", "stack_size": 0, "is_fluid": true, "sink_points": 0 },
+    { "id": "crude-oil", "name": "Crude Oil", "category": "fluid", "stack_size": 0, "is_fluid": true, "sink_points": 0 }
+  ]
+}

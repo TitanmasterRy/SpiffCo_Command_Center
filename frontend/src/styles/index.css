@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-surface text-slate-200 antialiased;
+  }
+  body {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  /* Compact secondary button used across editor toolbars. */
+  .btn {
+    @apply rounded border border-surface-border bg-surface-overlay px-2 py-1 text-xs font-medium
+      text-slate-200 transition-colors hover:bg-surface-border disabled:cursor-not-allowed;
+  }
+}

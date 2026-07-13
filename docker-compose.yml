@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPIFFCO_HOST: 0.0.0.0
+      SPIFFCO_PORT: "8000"
+      SPIFFCO_ENVIRONMENT: production
+      SPIFFCO_DEBUG: "false"
+      SPIFFCO_DATABASE_URL: sqlite+aiosqlite:////data/spiffco.db
+      # Point at your game machine running the FRM mod:
+      SPIFFCO_FRM_BASE_URL: http://host.docker.internal:8080
+    volumes:
+      - spiffco-data:/data
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  spiffco-data:

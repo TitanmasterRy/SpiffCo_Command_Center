@@ -1,0 +1,10 @@
+{
+  "$schema_note": "Construction cost per building, item id -> quantity.",
+  "build_costs": [
+    { "building": "smelter", "cost": { "iron-rod": 5, "wire": 8 } },
+    { "building": "constructor", "cost": { "reinforced-iron-plate": 2, "cable": 8 } },
+    { "building": "assembler", "cost": { "reinforced-iron-plate": 8, "cable": 12 } },
+    { "building": "miner-mk1", "cost": { "iron-plate": 10, "concrete": 10 } },
+    { "building": "water-extractor", "cost": { "copper-ingot": 20, "reinforced-iron-plate": 10, "cable": 10 } }
+  ]
+}

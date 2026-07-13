@@ -1,0 +1,11 @@
+{
+  "$schema_note": "World resource node locations (game-world coordinates, cm). Purity multiplies extraction: impure 0.5, normal 1.0, pure 2.0. Seed subset.",
+  "purity_multipliers": { "impure": 0.5, "normal": 1.0, "pure": 2.0 },
+  "nodes": [
+    { "id": "iron-grassfields-01", "resource": "iron-ore", "purity": "normal", "position": { "x": -72000, "y": 148000, "z": 1500 }, "region": "Grass Fields" },
+    { "id": "iron-grassfields-02", "resource": "iron-ore", "purity": "pure", "position": { "x": -68500, "y": 151200, "z": 1450 }, "region": "Grass Fields" },
+    { "id": "copper-grassfields-01", "resource": "copper-ore", "purity": "normal", "position": { "x": -60200, "y": 140900, "z": 1900 }, "region": "Grass Fields" },
+    { "id": "limestone-rockydesert-01", "resource": "limestone", "purity": "pure", "position": { "x": -20400, "y": 122000, "z": 6000 }, "region": "Rocky Desert" },
+    { "id": "coal-northernforest-01", "resource": "coal", "purity": "normal", "position": { "x": 8000, "y": -95000, "z": 12000 }, "region": "Northern Forest" }
+  ]
+}

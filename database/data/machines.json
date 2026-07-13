@@ -1,0 +1,13 @@
+{
+  "$schema_note": "Machine simulation parameters. Clock 1-250%; power scales with clock^power_exponent. Somersloop slots double output per filled slot at doubled power cost.",
+  "machines": [
+    { "id": "smelter", "building": "smelter", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 1 },
+    { "id": "foundry", "building": "foundry", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 2 },
+    { "id": "constructor", "building": "constructor", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 1 },
+    { "id": "assembler", "building": "assembler", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 2 },
+    { "id": "manufacturer", "building": "manufacturer", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 4 },
+    { "id": "refinery", "building": "refinery", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 2 },
+    { "id": "miner-mk1", "building": "miner-mk1", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 0, "base_rate": 60 },
+    { "id": "miner-mk2", "building": "miner-mk2", "min_clock": 0.01, "max_clock": 2.5, "power_exponent": 1.321928, "somersloop_slots": 0, "base_rate": 120 }
+  ]
+}

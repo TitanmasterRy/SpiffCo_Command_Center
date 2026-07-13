@@ -1,0 +1,80 @@
+{
+  "$schema_note": "Rates are items/min at 100% clock. See docs/DATABASE_SCHEMA.md.",
+  "recipes": [
+    {
+      "id": "iron-ingot",
+      "name": "Iron Ingot",
+      "machine": "smelter",
+      "duration_seconds": 2,
+      "inputs": [{ "item": "iron-ore", "rate": 30 }],
+      "outputs": [{ "item": "iron-ingot", "rate": 30 }]
+    },
+    {
+      "id": "copper-ingot",
+      "name": "Copper Ingot",
+      "machine": "smelter",
+      "duration_seconds": 2,
+      "inputs": [{ "item": "copper-ore", "rate": 30 }],
+      "outputs": [{ "item": "copper-ingot", "rate": 30 }]
+    },
+    {
+      "id": "concrete",
+      "name": "Concrete",
+      "machine": "constructor",
+      "duration_seconds": 4,
+      "inputs": [{ "item": "limestone", "rate": 45 }],
+      "outputs": [{ "item": "concrete", "rate": 15 }]
+    },
+    {
+      "id": "iron-plate",
+      "name": "Iron Plate",
+      "machine": "constructor",
+      "duration_seconds": 6,
+      "inputs": [{ "item": "iron-ingot", "rate": 30 }],
+      "outputs": [{ "item": "iron-plate", "rate": 20 }]
+    },
+    {
+      "id": "iron-rod",
+      "name": "Iron Rod",
+      "machine": "constructor",
+      "duration_seconds": 4,
+      "inputs": [{ "item": "iron-ingot", "rate": 15 }],
+      "outputs": [{ "item": "iron-rod", "rate": 15 }]
+    },
+    {
+      "id": "screw",
+      "name": "Screw",
+      "machine": "constructor",
+      "duration_seconds": 6,
+      "inputs": [{ "item": "iron-rod", "rate": 10 }],
+      "outputs": [{ "item": "screw", "rate": 40 }]
+    },
+    {
+      "id": "wire",
+      "name": "Wire",
+      "machine": "constructor",
+      "duration_seconds": 4,
+      "inputs": [{ "item": "copper-ingot", "rate": 15 }],
+      "outputs": [{ "item": "wire", "rate": 30 }]
+    },
+    {
+      "id": "cable",
+      "name": "Cable",
+      "machine": "constructor",
+      "duration_seconds": 2,
+      "inputs": [{ "item": "wire", "rate": 60 }],
+      "outputs": [{ "item": "cable", "rate": 30 }]
+    },
+    {
+      "id": "reinforced-iron-plate",
+      "name": "Reinforced Iron Plate",
+      "machine": "assembler",
+      "duration_seconds": 12,
+      "inputs": [
+        { "item": "iron-plate", "rate": 30 },
+        { "item": "screw", "rate": 60 }
+      ],
+      "outputs": [{ "item": "reinforced-iron-plate", "rate": 5 }]
+    }
+  ]
+}

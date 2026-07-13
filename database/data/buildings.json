@@ -1,0 +1,14 @@
+{
+  "$schema_note": "Production buildings. power_mw is consumption at 100% clock. See docs/DATABASE_SCHEMA.md.",
+  "buildings": [
+    { "id": "smelter", "name": "Smelter", "category": "production", "power_mw": 4, "inputs": 1, "outputs": 1, "footprint": { "width": 6, "length": 9 } },
+    { "id": "foundry", "name": "Foundry", "category": "production", "power_mw": 16, "inputs": 2, "outputs": 1, "footprint": { "width": 10, "length": 9 } },
+    { "id": "constructor", "name": "Constructor", "category": "production", "power_mw": 4, "inputs": 1, "outputs": 1, "footprint": { "width": 8, "length": 10 } },
+    { "id": "assembler", "name": "Assembler", "category": "production", "power_mw": 15, "inputs": 2, "outputs": 1, "footprint": { "width": 10, "length": 15 } },
+    { "id": "manufacturer", "name": "Manufacturer", "category": "production", "power_mw": 55, "inputs": 4, "outputs": 1, "footprint": { "width": 18, "length": 20 } },
+    { "id": "refinery", "name": "Refinery", "category": "production", "power_mw": 30, "inputs": 2, "outputs": 2, "footprint": { "width": 10, "length": 20 } },
+    { "id": "miner-mk1", "name": "Miner Mk.1", "category": "extraction", "power_mw": 5, "inputs": 0, "outputs": 1, "footprint": { "width": 6, "length": 14 } },
+    { "id": "miner-mk2", "name": "Miner Mk.2", "category": "extraction", "power_mw": 12, "inputs": 0, "outputs": 1, "footprint": { "width": 6, "length": 14 } },
+    { "id": "water-extractor", "name": "Water Extractor", "category": "extraction", "power_mw": 20, "inputs": 0, "outputs": 1, "footprint": { "width": 20, "length": 20 } }
+  ]
+}
