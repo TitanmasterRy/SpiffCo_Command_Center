@@ -101,12 +101,15 @@ function badgeHtml(feature: MapFeature): string {
   const url = iconUrl(feature);
   if (url) {
     // Game icon inside a light disc ringed by the feature/purity color.
+    // Sizing MUST be inline: Tailwind preflight (img{height:auto}) and Leaflet
+    // (img{max-width:none}) both override width/height *attributes*, which would
+    // let the native ~256px icon overflow the marker.
     return (
-      `<div style="width:${SIZE}px;height:${SIZE}px;border-radius:50%;` +
+      `<div style="width:${SIZE}px;height:${SIZE}px;border-radius:50%;overflow:hidden;` +
       `background:#eef2f7;border:3px solid ${ring};box-sizing:border-box;` +
       `display:flex;align-items:center;justify-content:center;` +
       `box-shadow:0 1px 3px rgba(0,0,0,.55);opacity:${opacity}">` +
-      `<img src="${url}" width="16" height="16" style="object-fit:contain" alt="" /></div>`
+      `<img src="${url}" alt="" style="width:17px;height:17px;min-width:0;object-fit:contain;display:block" /></div>`
     );
   }
   // Fallback: colored badge with a white SVG glyph.
@@ -132,7 +135,8 @@ export function featureIcon(feature: MapFeature): DivIcon {
 
 /** Small ``<img>`` markup for a pickup kind (for the filter toggles), or ''. */
 export function pickupKindIconHtml(kind: string): string {
+  // Inline sizing so Tailwind preflight can't stretch it to native size.
   return PICKUP_ICONS.has(kind)
-    ? `<img src="${ICON_BASE}/pickup/${kind}.webp" width="16" height="16" alt="" />`
+    ? `<img src="${ICON_BASE}/pickup/${kind}.webp" alt="" style="width:16px;height:16px;object-fit:contain;display:block" />`
     : '';
 }
