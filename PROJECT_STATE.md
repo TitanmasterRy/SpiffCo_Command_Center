@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 4 complete, Phase 5 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 5 complete, Phase 6 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -102,13 +102,39 @@ ruff + mypy clean on new modules, live smoke test of the planner API (buildings
 served, plan create with correct power summary, overlap rejection, export→import
 roundtrip).
 
+### Phase 5 — Production Planner
+
+**Backend** (`app/production/`, `app/api/v1/production.py`, gamedata endpoints)
+- Recipe/item data (`app/production/data.py`, `lru_cache`d): loads
+  `recipes.json` + `alternate_recipes.json` + `items.json`; indexes producers,
+  default recipe per item, raw-resource detection.
+- Solver (`app/production/solver.py`): depth-first recipe-tree resolution sizing
+  fractional machines per step; `recipe_overrides` (invalid → warn + fallback),
+  somersloop amplification (2× output, `×4` per-machine power), cycle/depth
+  guards → `warnings`. Rolls up power, per-building machine counts, raw
+  materials, byproducts, and a `build_cost` shopping list (ceil machines).
+- Schemas in `app/schemas/production.py`; endpoints `GET /gamedata/recipes`,
+  `GET /gamedata/items`, `POST /api/v1/production/plan`. **Stateless — no tables.**
+
+**Frontend** (`pages/Planner.tsx`, route `/planner` — replaces the stub)
+- Target-item picker + rate input, per-item alternate-recipe dropdowns (only for
+  items with >1 recipe in the current tree), an indented production tree with
+  inline somersloop toggles, and totals panels (power, machine counts, raw
+  materials/min, byproducts, build cost). Hooks in `hooks/useProduction.ts`;
+  types in `types/production.ts`. `/planner` sidebar item renamed to
+  "Production Planner"; `/factory-planner` stays the Phase 4 grid designer.
+
+**Verified end-to-end**: pytest 45/45, vitest 26/26, `tsc`/build clean, ruff +
+mypy clean on new modules, live smoke test of the production API (recipes/items
+served, reinforced-iron-plate ×10/min solves to the correct 78 MW machine tree
+with raw/cost rollups, alternate-recipe override changes the machine mix).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 5 — Production Planner | Recipe chains, clock speeds, somersloops, alternates, balancing, power calc, shopping lists |
 | 6 — Logistics | Belts, pipes, trains, trucks, drones, flow visualization, throughput analysis |
 | 7 — Power | Power graph page, historical usage, battery analysis, recommendations |
 | 8 — Blueprint System | Library, categories, tags, search, favorites, import/export, statistics |
@@ -117,7 +143,7 @@ roundtrip).
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
-The frontend pages for phases 5–8 exist only as placeholder stubs (`frontend/src/pages/stubs.tsx`); the matching backend packages are empty scaffolds.
+The frontend pages for phases 6–8 exist only as placeholder stubs (`frontend/src/pages/stubs.tsx`); the matching backend packages are empty scaffolds.
 
 ### Known gaps in shipped code
 
@@ -136,45 +162,42 @@ The frontend pages for phases 5–8 exist only as placeholder stubs (`frontend/s
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 5 — Production Planner
+### Primary goal: Phase 6 — Logistics
 
-Turn recipes into balanced production chains. The Phase 4 planner already gives
-building footprints/power and a build-cost rollup; Phase 5 adds the *what to
-build* layer. Suggested order:
+Visualize and analyze material movement: belts, pipes, trains, trucks, drones.
+The `SimulatedWorldProvider` already places train/drone/truck stations on the
+map; Phase 6 adds the *connections and throughput* layer. Suggested order:
 
-1. **Serve recipe game data**: extend `app/api/v1/gamedata.py` with
-   `GET /gamedata/recipes` (+ alternates) and `/gamedata/items` from
-   `database/data/recipes.json` / `alternate_recipes.json` / `items.json`
-   (reuse the `lru_cache` loader pattern in `app/planner/gamedata.py`).
-2. **Solver** (new `app/production/` module — package scaffold exists):
-   - Given a target item + rate, resolve the recipe tree (choosing among
-     alternates), compute machine counts, clock speeds, somersloop slots, and
-     per-item input/output balance.
-   - Power calc reuses `power_mw × clock^1.321928`; shopping list reuses the
-     Phase 4 build-cost rollup shape (`{item: qty}`).
-   - Normalize into `app/schemas/production.py`; raise `AppError` subclasses.
-3. **Frontend** (`pages/Planner.tsx` replaces the `/planner` stub): target
-   picker, recipe/alternate selection, clock & somersloop controls, a
-   balance/flow view, power total, and a shopping list. Reuse `useGameData`
-   patterns and the `.btn`/`Card` primitives.
-4. **Link to Phase 4**: let a production plan seed placements into a factory
-   plan (or at least export its machine counts to a factory-planner layout).
-5. **Tests**: recipe-tree resolution, alternate selection, balance math
-   (backend); solver display helpers (frontend unit tests).
+1. **Transport game data**: `database/data/transportation.json` already exists —
+   serve belt/pipe/vehicle tiers (max rates) via a `GET /gamedata/transport`
+   endpoint (reuse the `lru_cache` loader pattern).
+2. **Logistics model** (`app/logistics/` — package scaffold exists):
+   - Normalize a network of nodes (stations/factories) and edges (belt/pipe/
+     train/truck/drone routes) with a carried item + throughput; simulate or
+     seed a plausible network via a provider (mirror `WorldProvider`).
+   - Throughput analysis: per-edge utilization vs. belt/pipe tier capacity;
+     flag over-capacity edges. Normalize into `app/schemas/logistics.py`.
+   - Publish live updates on a `logistics.*` WS topic (add to
+     `shared/constants/ws_topics.json`); never push to sockets directly.
+3. **Frontend**: replace the `/trains` stub (and/or a new Logistics page) with a
+   network/flow view — a graph or a Leaflet overlay reusing `mapCoords.ts` —
+   with per-route throughput and a utilization heat scale (dataviz palette).
+4. **Tests**: capacity/utilization math and network normalization (backend);
+   flow-scaling display helpers (frontend unit tests).
 
 ### Housekeeping (small, high value — carried forward)
 
-- **Visual check**: open the app (`scripts/dev.ps1`) and eyeball the new Factory
-  Planner (drag/rotate/collision highlight, toolbar wrapping on narrow widths),
-  plus the still-unverified Dashboard chart and World Map.
+- **Visual check**: open the app (`scripts/dev.ps1`) and eyeball the two new
+  planners (Factory Planner drag/rotate/collision; Production Planner tree +
+  totals), plus the still-unverified Dashboard chart and World Map.
 - **eslint isn't installed** in the current env (`npm run lint` fails on a
   missing binary) — `npm install` to restore the devDependency, then lint.
-- **Alembic bootstrap** is now overdue: Phase 4 added two tables via
-  `create_all`; do it before Phase 5 adds more.
+- **Alembic bootstrap** is overdue: Phase 4 added two tables via `create_all`.
 - **Fix pytest warnings** (SAWarning about the `ProductionSample` identity map
   during history sampling — pre-existing, worth silencing at the source).
-- **OpenAPI-generated frontend types** — the API surface grew a lot in Phase 4;
-  generate before it grows further.
+- **OpenAPI-generated frontend types** — the API surface keeps growing; generate
+  before Phase 6 adds more.
+- **Bundle >800 kB** — code-split (Recharts/Leaflet) is increasingly worthwhile.
 
 ### Design decisions already made (don't re-litigate)
 

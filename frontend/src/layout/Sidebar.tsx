@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { to: '/map', label: 'World Map', icon: '🗺' },
   { to: '/factories', label: 'Factories', icon: '🏭' },
   { to: '/factory-planner', label: 'Factory Planner', icon: '🧱' },
-  { to: '/planner', label: 'Planner', icon: '⚙' },
+  { to: '/planner', label: 'Production Planner', icon: '⚙' },
   { to: '/power', label: 'Power', icon: '⚡' },
   { to: '/resources', label: 'Resources', icon: '⛏' },
   { to: '/trains', label: 'Train Network', icon: '🚆' },

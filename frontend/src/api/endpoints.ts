@@ -9,6 +9,7 @@ import type {
   PlanUpdate,
   PlanVersion,
 } from '../types/planner';
+import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
 import type { CustomMarker, CustomMarkerIn, WorldSnapshot } from '../types/world';
 import { apiFetch } from './http';
 
@@ -46,6 +47,15 @@ export const api = {
   },
   gamedata: {
     buildings: () => apiFetch<BuildingInfo[]>('/api/v1/gamedata/buildings'),
+    recipes: () => apiFetch<RecipeInfo[]>('/api/v1/gamedata/recipes'),
+    items: () => apiFetch<ItemInfo[]>('/api/v1/gamedata/items'),
+  },
+  production: {
+    plan: (request: ProductionRequest) =>
+      apiFetch<ProductionPlan>('/api/v1/production/plan', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }),
   },
   plans: {
     list: () => apiFetch<PlanSummaryInfo[]>('/api/v1/plans'),

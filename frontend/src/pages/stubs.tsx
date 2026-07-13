@@ -15,16 +15,6 @@ export function Factories() {
   );
 }
 
-export function Planner() {
-  return (
-    <PagePlaceholder
-      title="Production Planner"
-      phase="Phase 5"
-      description="Recipe planning with clock speeds, somersloops, alternate recipes, input/output balancing, power calculations, and shopping lists."
-    />
-  );
-}
-
 export function Power() {
   return (
     <PagePlaceholder

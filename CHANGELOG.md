@@ -6,6 +6,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 5: Production Planner
+
+- Recipe-tree solver (`app/production/solver.py`): resolves a target item + rate
+  into a full production chain, sizing fractional machines per step down to raw
+  resources; power draw, per-building machine counts, raw-material demand,
+  byproducts, and a construction shopping list roll up across the tree.
+- Alternate-recipe selection via `recipe_overrides` (invalid overrides warn and
+  fall back to the default recipe); somersloop amplification doubles a node's
+  output for a super-linear (`×4` per machine) power cost; recipe cycles and
+  unknown machines surface as `warnings` rather than failing.
+- Recipe/item game data (`app/production/data.py`, `lru_cache`d) served via
+  `GET /api/v1/gamedata/recipes` and `/gamedata/items`; solve endpoint
+  `POST /api/v1/production/plan`.
+- Production Planner page (`pages/Planner.tsx`, route `/planner`): target picker,
+  rate input, per-item alternate-recipe dropdowns, an indented production tree
+  with inline somersloop toggles, and totals panels (power, machines, raw
+  materials, byproducts, build cost).
+
 ### Added — Phase 4: Factory Planner
 
 - Persisted factory plans with append-only version history: `factory_plans` and

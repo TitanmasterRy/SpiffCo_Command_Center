@@ -118,6 +118,25 @@ The plan `summary` is derived server-side: `total_power_mw`
 (`Σ power_mw × clock^1.321928`), `machine_count`, `machine_counts`
 (building id → count), and `build_cost` (item id → total quantity).
 
+## Endpoints (Phase 5 — Production Planner)
+
+### `GET /api/v1/gamedata/recipes` · `GET /api/v1/gamedata/items`
+
+`RecipeInfo[]` (`{id, name, machine, duration_seconds, inputs, outputs,
+is_alternate, unlock}`, rates items/min) and `ItemInfo[]` (`{id, name, category,
+stack_size, is_fluid, sink_points}`). Static, cached.
+
+### `POST /api/v1/production/plan`
+
+Body `ProductionRequest` `{item, rate_per_min, recipe_overrides?: {item:
+recipe_id}, somersloop_items?: [item]}` → `ProductionPlan` `{target, root,
+totals, warnings}`. `root` is a `ProductionNode` tree (`{item, rate_per_min,
+is_raw, recipe_id, machine, machine_count, power_mw, somersloop, byproducts,
+inputs}`); `totals` carries `power_mw`, `machine_counts`, `raw_materials`,
+`byproducts`, and a `build_cost` shopping list. An unknown override recipe →
+`404 not_found`; cycles / missing machines are reported in `warnings`.
+Somersloop-amplified nodes double output at `×4` per-machine power.
+
 ## WebSocket `/ws`
 
 Client → server:

@@ -9,8 +9,8 @@ every step.
 | 2 | **Dashboard** — factory status, power, production, storage, alerts, efficiency, machine counts, graphs | ✅ done (simulated data source until Phase 11) |
 | 3 | **World Map** — interactive map, players, factories, nodes, trains, stations, markers, search, filters, layers | ✅ done (simulated data; no terrain tiles yet) |
 | 4 | **Factory Planner** — grid designer, placement, blueprint editor, area planning, import/export, versioning | ✅ done (simulated/static game data) |
-| 5 | **Production Planner** — recipes, clocks, somersloops, alternates, balancing, power calc, shopping lists | ⬜ next |
-| 6 | **Logistics** — belts, pipes, trains, trucks, drones, flow visualization, throughput analysis | ⬜ |
+| 5 | **Production Planner** — recipes, clocks, somersloops, alternates, balancing, power calc, shopping lists | ✅ done (static recipe data; seed subset) |
+| 6 | **Logistics** — belts, pipes, trains, trucks, drones, flow visualization, throughput analysis | ⬜ next |
 | 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ⬜ |
 | 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ⬜ |
 | 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ⬜ |
