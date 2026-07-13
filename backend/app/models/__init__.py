@@ -6,6 +6,7 @@ before ``create_all`` runs.
 
 from app.models.app_setting import AppSetting
 from app.models.base import Base
+from app.models.blueprint import Blueprint
 from app.models.history import PowerSample, ProductionSample
 from app.models.map_marker import MapMarker
 from app.models.plan import FactoryPlan, PlanVersion
@@ -18,4 +19,5 @@ __all__ = [
     "MapMarker",
     "FactoryPlan",
     "PlanVersion",
+    "Blueprint",
 ]

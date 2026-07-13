@@ -6,6 +6,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 8: Blueprint System
+
+- Persisted blueprint library (`blueprints` table): name, description, category,
+  tags, favorite, and a reusable `data` payload (layout/recipe fragment).
+- CRUD + filtering (category / tag / favorite / name-description search),
+  favorite toggling, per-blueprint import/export, and a library stats rollup
+  (`app/blueprints/service.py`, schemas in `app/schemas/blueprint.py`); endpoints
+  under `/api/v1/blueprints` (+ `/stats`, `/{id}/export`, `/import`).
+- Blueprints page (`pages/Blueprints.tsx`, route `/blueprints`): search + category/
+  tag/favorite filters, a responsive card grid with favorite stars, create/
+  import/export/delete, and a live stats line. Filtering/faceting/stat derivation
+  are pure and client-side (`utils/blueprintFilters.ts`, unit-tested).
+
 ### Added — Phase 7: Power
 
 - Power analysis (`app/power/analysis.py`, pure): grid headroom + status

@@ -12,8 +12,8 @@ every step.
 | 5 | **Production Planner** — recipes, clocks, somersloops, alternates, balancing, power calc, shopping lists | ✅ done (static recipe data; seed subset) |
 | 6 | **Logistics** — belts, pipes, trains, trucks, drones, flow visualization, throughput analysis | ✅ done (simulated network) |
 | 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ✅ done (simulated data) |
-| 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ⬜ next |
-| 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ⬜ |
+| 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ✅ done |
+| 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ⬜ next |
 | 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ⬜ |
 | 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ⬜ |
 | 12 | **Offline Mode** — save-file reading, planning without a live game | ⬜ |

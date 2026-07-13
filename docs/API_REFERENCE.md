@@ -168,6 +168,29 @@ trend, minutes_remaining}`), a `recommendations` list, and recent `history`
 (`PowerHistoryPoint[]`, ≤`history`). Live grid stats also arrive on
 `dashboard.snapshot`.
 
+## Endpoints (Phase 8 — Blueprint System)
+
+### `GET /api/v1/blueprints` · `POST /api/v1/blueprints`
+
+List returns `BlueprintSummary[]` (no `data` body), newest first, filtered by
+optional `category`, `tag`, `favorite`, and `q` (name/description search) query
+params. POST body `BlueprintIn` `{name, description?, category?, tags?, favorite?,
+data?}` → 201 `Blueprint` (summary + `data`).
+
+### `GET/PUT/DELETE /api/v1/blueprints/{id}`
+
+GET → full `Blueprint`. PUT body `BlueprintUpdate` (partial; only supplied fields
+change, including toggling `favorite`). DELETE → 204.
+
+### `GET /api/v1/blueprints/stats`
+
+`BlueprintStats` `{total, favorites, by_category, by_tag}`.
+
+### `GET /api/v1/blueprints/{id}/export` · `POST /api/v1/blueprints/import`
+
+Export → portable `BlueprintExport` (no server ids); import creates a new
+blueprint from that document.
+
 ## WebSocket `/ws`
 
 Client → server:

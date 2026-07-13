@@ -2,12 +2,13 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from './layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import FactoryPlanner from './pages/FactoryPlanner';
+import Blueprints from './pages/Blueprints';
 import Logistics from './pages/Logistics';
 import Planner from './pages/Planner';
 import Power from './pages/Power';
 import Settings from './pages/Settings';
 import WorldMap from './pages/WorldMap';
-import { Blueprints, Factories, Resources } from './pages/stubs';
+import { Factories, Resources } from './pages/stubs';
 
 /** Application route table. */
 export const router = createBrowserRouter([

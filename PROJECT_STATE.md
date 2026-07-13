@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 7 complete, Phase 8 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 8 complete, Phase 9 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -176,21 +176,44 @@ utilization + per-mode throughput rollups).
 mypy clean on new modules, live smoke test of the power API (headroom 31%,
 battery charging ~104 min to full, healthy recommendation, generator catalog).
 
+### Phase 8 — Blueprint System
+
+**Backend** (`app/blueprints/`, `app/api/v1/blueprints.py`, `blueprints` table)
+- `Blueprint` model (`app/models/blueprint.py`): name, description, category
+  (indexed), tags (JSON), favorite, reusable `data` (JSON). Registered in
+  `models/__init__.py`; created via `create_all` (additions are safe).
+- Service (`app/blueprints/service.py`): CRUD, client-agnostic filtering
+  (category/tag/favorite/search), partial update (`exclude_unset` — favorite
+  toggle), stats rollup (by category/tag, favorites), import/export. Schemas in
+  `app/schemas/blueprint.py` (`BlueprintSummary` omits `data` for list views).
+- Endpoints under `/api/v1/blueprints` (+ `/stats`, `/{id}/export`, `/import`).
+
+**Frontend** (`pages/Blueprints.tsx`, route `/blueprints`)
+- Search + category/tag/favorite filters, responsive card grid with favorite
+  stars, create/import/export/delete, and a live stats line. Filtering, faceting,
+  and stat derivation are pure and client-side (`utils/blueprintFilters.ts`,
+  unit-tested); mutations in `hooks/useBlueprints.ts`; types in
+  `types/blueprint.ts`.
+
+**Verified end-to-end**: pytest 60/60, vitest 35/35, `tsc`/build clean, ruff +
+mypy clean on new modules (blueprint CRUD/filter/stats/export-import covered by
+tests running through the real ASGI app).
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 8 — Blueprint System | Library, categories, tags, search, favorites, import/export, statistics |
 | 9 — Analytics | Historical graphs, uptime, comparisons, KPIs |
 | 10 — AI Advisor | Bottleneck/shortage/starvation detection with explained recommendations |
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
 
-The frontend pages for Blueprints (Phase 8), Factories, and Resources exist only
-as placeholder stubs (`frontend/src/pages/stubs.tsx`); the matching backend
-packages are empty scaffolds.
+The Factories and Resources pages exist only as placeholder stubs
+(`frontend/src/pages/stubs.tsx`); their backend packages are empty scaffolds.
+(Much of their content is already covered elsewhere: per-factory status on the
+Dashboard, resource nodes on the World Map.)
 
 ### Known gaps in shipped code
 
@@ -209,26 +232,26 @@ packages are empty scaffolds.
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 8 — Blueprint System
+### Primary goal: Phase 9 — Analytics
 
-A persisted library of reusable blueprints (categories, tags, search, favorites,
-import/export, statistics). This is the first phase since Phase 4 that adds
-**persisted tables**, so it is the natural moment to finally bootstrap Alembic.
-The Factory Planner (Phase 4) already has plan layouts + import/export to mirror.
-Suggested order:
+Historical graphs, uptime, production/power history, comparisons, and KPIs. Most
+of the raw data already exists: `power_samples` and `production_samples` are
+sampled every 30 s (`GameStateService.record_history`), with `/dashboard/history`
+endpoints. Phase 9 turns that into an analytics surface. Suggested order:
 
-1. **Schemas & persistence** (`app/blueprints/` — package scaffold exists):
-   - `Blueprint` table: id, name, description, category, tags (JSON), favorite,
-     `data` JSON (a reusable layout/recipe fragment — reuse the Phase 4 `Layout`
-     shape or a superset), created/updated. Consider a small stats rollup.
-   - CRUD + filtering (category/tag/favorite/search) + import/export (mirror
-     `app/planner/service.py` patterns). Normalize into `app/schemas/blueprint.py`.
-   - **Bootstrap Alembic now** (overdue since Phase 4) before adding this table.
-2. **Frontend**: replace the `/blueprints` stub with a library page — category/
-   tag filters, search, favorite toggles, a grid/list of cards, import/export,
-   and a small statistics panel (counts by category/tag).
-3. **Tests**: CRUD + filter + import/export roundtrip (backend); filter/sort
-   helpers (frontend unit tests).
+1. **Analytics service** (`app/analytics/` — package scaffold exists):
+   - Aggregations over the history tables: min/max/avg power and production,
+     uptime (% of samples above a threshold), and time-window comparisons
+     (e.g. last hour vs. previous). Normalize into `app/schemas/analytics.py`.
+   - Endpoints like `GET /api/v1/analytics/summary` and
+     `/analytics/production/{item}`; reuse the existing sample queries.
+   - Watch the unbounded-history gap (samples grow forever) — consider the
+     retention/pruning job from the backlog while here.
+2. **Frontend**: a new Analytics page (or wire the `/factories`/`/resources`
+   stubs) — KPI tiles, multi-series history charts (reuse Recharts + the dataviz
+   palette), and a comparison view.
+3. **Tests**: aggregation/uptime/comparison math (backend); KPI/format helpers
+   (frontend unit tests).
 
 ### Housekeeping (small, high value — carried forward)
 

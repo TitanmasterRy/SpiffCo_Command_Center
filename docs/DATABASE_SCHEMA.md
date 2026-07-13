@@ -40,6 +40,19 @@ Append-only snapshot per save; enables non-destructive revert.
 | `layout` | JSON | Frozen layout for this version |
 | `created_at` / `updated_at` | DATETIME | UTC, via `TimestampMixin` |
 
+### `blueprints` (Phase 8)
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | INTEGER PK | |
+| `name` | TEXT (≤128) | |
+| `description` | TEXT | |
+| `category` | TEXT (≤64), indexed | e.g. `smelting`, `power` (default `general`) |
+| `tags` | JSON | List of tag strings |
+| `favorite` | BOOLEAN | |
+| `data` | JSON | Reusable payload (layout / recipe fragment) |
+| `created_at` / `updated_at` | DATETIME | UTC, via `TimestampMixin` |
+
 ## Static game data (JSON)
 
 Conventions: IDs are stable kebab-case slugs; item/fluid rates are **per

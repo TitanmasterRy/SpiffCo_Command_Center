@@ -25,12 +25,3 @@ export function Resources() {
   );
 }
 
-export function Blueprints() {
-  return (
-    <PagePlaceholder
-      title="Blueprints"
-      phase="Phase 8"
-      description="Blueprint library with categories, tags, search, favorites, import/export, and statistics."
-    />
-  );
-}

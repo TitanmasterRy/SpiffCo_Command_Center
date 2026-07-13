@@ -9,6 +9,13 @@ import type {
   PlanUpdate,
   PlanVersion,
 } from '../types/planner';
+import type {
+  Blueprint,
+  BlueprintExport,
+  BlueprintIn,
+  BlueprintSummary,
+  BlueprintUpdate,
+} from '../types/blueprint';
 import type { LogisticsSnapshot, TransportData } from '../types/logistics';
 import type { PowerBuildingInfo, PowerReport } from '../types/power';
 import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
@@ -84,5 +91,26 @@ export const api = {
     export: (id: number) => apiFetch<PlanExport>(`/api/v1/plans/${id}/export`),
     import: (doc: PlanExport) =>
       apiFetch<FactoryPlan>('/api/v1/plans/import', { method: 'POST', body: JSON.stringify(doc) }),
+  },
+  blueprints: {
+    list: () => apiFetch<BlueprintSummary[]>('/api/v1/blueprints'),
+    get: (id: number) => apiFetch<Blueprint>(`/api/v1/blueprints/${id}`),
+    create: (blueprint: BlueprintIn) =>
+      apiFetch<Blueprint>('/api/v1/blueprints', { method: 'POST', body: JSON.stringify(blueprint) }),
+    update: (id: number, patch: BlueprintUpdate) =>
+      apiFetch<Blueprint>(`/api/v1/blueprints/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(patch),
+      }),
+    remove: async (id: number) => {
+      const response = await fetch(`/api/v1/blueprints/${id}`, { method: 'DELETE' });
+      if (!response.ok && response.status !== 404) throw new Error('delete failed');
+    },
+    export: (id: number) => apiFetch<BlueprintExport>(`/api/v1/blueprints/${id}/export`),
+    import: (doc: BlueprintExport) =>
+      apiFetch<Blueprint>('/api/v1/blueprints/import', {
+        method: 'POST',
+        body: JSON.stringify(doc),
+      }),
   },
 };
