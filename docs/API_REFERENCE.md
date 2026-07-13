@@ -191,6 +191,21 @@ change, including toggling `favorite`). DELETE → 204.
 Export → portable `BlueprintExport` (no server ids); import creates a new
 blueprint from that document.
 
+## Endpoints (Phase 9 — Analytics)
+
+### `GET /api/v1/analytics/summary?limit=<n>`
+
+`AnalyticsSummary`: `power` (`PowerAnalytics` — `produced`/`consumed`/`capacity`
+`SeriesStats` {count,min,max,avg,latest}, `battery_avg`, `uptime_percent`, and a
+`produced_trend` `Comparison` {current_avg, previous_avg, delta, delta_percent})
+plus `top_production` (busiest items by average rate). Aggregates the most recent
+`limit` history samples.
+
+### `GET /api/v1/analytics/production/{item}?limit=<n>`
+
+`ProductionAnalytics` for one item ({item, name, sample_count, rate `SeriesStats`,
+`trend` `Comparison`}); `404 not_found` if the item has no samples.
+
 ## WebSocket `/ws`
 
 Client → server:

@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: **2026-07-13** · Current milestone: **Phase 8 complete, Phase 9 next**
+Last updated: **2026-07-13** · Current milestone: **Phase 9 complete, Phase 10 next**
 
 Snapshot of what exists and works versus what remains. Companion docs:
 [docs/ROADMAP.md](docs/ROADMAP.md) (phase plan) and
@@ -199,13 +199,34 @@ battery charging ~104 min to full, healthy recommendation, generator catalog).
 mypy clean on new modules (blueprint CRUD/filter/stats/export-import covered by
 tests running through the real ASGI app).
 
+### Phase 9 — Analytics
+
+**Backend** (`app/analytics/`, `app/api/v1/analytics.py`)
+- Pure math (`app/analytics/compute.py`): `series_stats`, `uptime_fraction`,
+  `compare` (recent half vs. older half) — no I/O, unit-tested.
+- Service aggregates `power_samples` / `production_samples` into `PowerAnalytics`
+  (produced/consumed/capacity stats, battery avg, uptime, produced-trend) and the
+  busiest `ProductionAnalytics` lines. Schemas in `app/schemas/analytics.py`.
+  Endpoints `GET /analytics/summary`, `GET /analytics/production/{item}`.
+- **Test-infra fix**: added `SPIFFCO_SCHEDULER_ENABLED` (default true); conftest
+  disables it so the periodic history job no longer races request handlers on the
+  shared in-memory connection — deterministic, warning-free tests.
+
+**Frontend** (`pages/Analytics.tsx`, route `/analytics`, new sidebar entry)
+- KPI tiles (avg generation/consumption, uptime, avg battery), a generation-trend
+  card, and a top-production table with per-line trend arrows. Trend formatting is
+  pure (`utils/trend.ts`, unit-tested); data via `hooks/useAnalytics.ts`.
+
+**Verified end-to-end**: pytest 66/66 (0 warnings), vitest 38/38, `tsc`/build
+clean, ruff + mypy clean on new modules; analytics tests seed history through the
+live session factory and assert KPIs/ranking deterministically.
+
 ## 🚧 Incomplete
 
 ### Phases not started
 
 | Phase | Scope |
 |---|---|
-| 9 — Analytics | Historical graphs, uptime, comparisons, KPIs |
 | 10 — AI Advisor | Bottleneck/shortage/starvation detection with explained recommendations |
 | 11 — FRM Integration | Real connector: discovery, reconnect, health, caching, WS + polling fallback, normalization |
 | 12 — Offline Mode | Save-file parsing, planning without a live game |
@@ -232,26 +253,25 @@ Dashboard, resource nodes on the World Map.)
 
 ## ▶ Next session — detailed plan
 
-### Primary goal: Phase 9 — Analytics
+### Primary goal: Phase 10 — AI Advisor
 
-Historical graphs, uptime, production/power history, comparisons, and KPIs. Most
-of the raw data already exists: `power_samples` and `production_samples` are
-sampled every 30 s (`GameStateService.record_history`), with `/dashboard/history`
-endpoints. Phase 9 turns that into an analytics surface. Suggested order:
+Bottleneck / shortage / starvation detection with explained recommendations. This
+consolidates the ad-hoc rule-based advice already scattered across the app (the
+dashboard alerts, the Power page recommendations, logistics over-capacity flags)
+into one advisor service, and adds production-chain reasoning. Suggested order:
 
-1. **Analytics service** (`app/analytics/` — package scaffold exists):
-   - Aggregations over the history tables: min/max/avg power and production,
-     uptime (% of samples above a threshold), and time-window comparisons
-     (e.g. last hour vs. previous). Normalize into `app/schemas/analytics.py`.
-   - Endpoints like `GET /api/v1/analytics/summary` and
-     `/analytics/production/{item}`; reuse the existing sample queries.
-   - Watch the unbounded-history gap (samples grow forever) — consider the
-     retention/pruning job from the backlog while here.
-2. **Frontend**: a new Analytics page (or wire the `/factories`/`/resources`
-   stubs) — KPI tiles, multi-series history charts (reuse Recharts + the dataviz
-   palette), and a comparison view.
-3. **Tests**: aggregation/uptime/comparison math (backend); KPI/format helpers
-   (frontend unit tests).
+1. **Advisor engine** (`app/advisors/` — package scaffold exists):
+   - Rule set over the live snapshots (game state, world, logistics, power) +
+     history: starving machines (input < demand), storage backing up (output
+     belt over capacity / storage full), power shortfall, and low uptime.
+   - Each finding carries a severity, a human explanation, and a suggested fix
+     (mirror `PowerRecommendation`). Normalize into `app/schemas/advisor.py`;
+     publish on the reserved `alerts` WS topic.
+   - Endpoint `GET /api/v1/advisor` returning ranked findings.
+2. **Frontend**: an Advisor page (or a prominent dashboard panel) listing findings
+   grouped by severity with explanations and suggested actions.
+3. **Tests**: each detection rule against crafted snapshots (backend); severity
+   grouping/formatting helpers (frontend unit tests).
 
 ### Housekeeping (small, high value — carried forward)
 
@@ -260,12 +280,12 @@ endpoints. Phase 9 turns that into an analytics surface. Suggested order:
   totals), plus the still-unverified Dashboard chart and World Map.
 - **eslint isn't installed** in the current env (`npm run lint` fails on a
   missing binary) — `npm install` to restore the devDependency, then lint.
-- **Alembic bootstrap** is overdue: Phase 4 added two tables via `create_all`.
-- **Fix pytest warnings** (SAWarning about the `ProductionSample` identity map
-  during history sampling — pre-existing, worth silencing at the source).
+- **Alembic bootstrap** is overdue: Phases 4 and 8 added tables via `create_all`.
 - **OpenAPI-generated frontend types** — the API surface keeps growing; generate
-  before Phase 6 adds more.
-- **Bundle >800 kB** — code-split (Recharts/Leaflet) is increasingly worthwhile.
+  before it grows further.
+- **Bundle >830 kB** — code-split (Recharts/Leaflet) is increasingly worthwhile.
+- **History grows unbounded** — `power_samples` / `production_samples` never
+  prune; the Analytics phase makes a retention job more valuable.
 
 ### Design decisions already made (don't re-litigate)
 

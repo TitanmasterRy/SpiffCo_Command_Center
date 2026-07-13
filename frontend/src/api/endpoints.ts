@@ -16,6 +16,7 @@ import type {
   BlueprintSummary,
   BlueprintUpdate,
 } from '../types/blueprint';
+import type { AnalyticsSummary, ProductionAnalytics } from '../types/analytics';
 import type { LogisticsSnapshot, TransportData } from '../types/logistics';
 import type { PowerBuildingInfo, PowerReport } from '../types/power';
 import type { ItemInfo, ProductionPlan, ProductionRequest, RecipeInfo } from '../types/production';
@@ -66,6 +67,13 @@ export const api = {
   },
   power: {
     report: (history = 120) => apiFetch<PowerReport>(`/api/v1/power?history=${history}`),
+  },
+  analytics: {
+    summary: (limit = 240) => apiFetch<AnalyticsSummary>(`/api/v1/analytics/summary?limit=${limit}`),
+    production: (item: string, limit = 240) =>
+      apiFetch<ProductionAnalytics>(
+        `/api/v1/analytics/production/${encodeURIComponent(item)}?limit=${limit}`,
+      ),
   },
   production: {
     plan: (request: ProductionRequest) =>

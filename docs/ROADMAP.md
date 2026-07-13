@@ -13,8 +13,8 @@ every step.
 | 6 | **Logistics** — belts, pipes, trains, trucks, drones, flow visualization, throughput analysis | ✅ done (simulated network) |
 | 7 | **Power** — power graph, history, consumption/generation, batteries, recommendations | ✅ done (simulated data) |
 | 8 | **Blueprint System** — library, categories, tags, search, favorites, import/export, statistics | ✅ done |
-| 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ⬜ next |
-| 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ⬜ |
+| 9 | **Analytics** — historical graphs, uptime, production/power history, comparisons, KPIs | ✅ done |
+| 10 | **AI Advisor** — bottleneck/shortage/starvation detection with explained recommendations | ⬜ next |
 | 11 | **FRM Integration** — discovery, reconnect, health, caching, WS + polling fallback, normalization | ⬜ |
 | 12 | **Offline Mode** — save-file reading, planning without a live game | ⬜ |
 

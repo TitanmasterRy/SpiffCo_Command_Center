@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.v1.analytics import router as analytics_router
 from app.api.v1.blueprints import router as blueprints_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.gamedata import router as gamedata_router
@@ -22,5 +23,6 @@ api_v1_router.include_router(production_router)
 api_v1_router.include_router(logistics_router)
 api_v1_router.include_router(power_router)
 api_v1_router.include_router(blueprints_router)
+api_v1_router.include_router(analytics_router)
 
 __all__ = ["api_v1_router"]

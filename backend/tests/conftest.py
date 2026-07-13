@@ -16,6 +16,9 @@ from httpx import ASGITransport, AsyncClient
 os.environ["SPIFFCO_DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["SPIFFCO_ENVIRONMENT"] = "test"
 os.environ["SPIFFCO_LOG_LEVEL"] = "WARNING"
+# Keep the periodic scheduler off so background DB writes never race the request
+# handlers on the shared in-memory connection (deterministic, warning-free tests).
+os.environ["SPIFFCO_SCHEDULER_ENABLED"] = "false"
 
 from app.config.settings import get_settings  # noqa: E402
 

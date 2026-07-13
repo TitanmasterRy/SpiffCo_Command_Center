@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     frm_poll_interval_seconds: float = 5.0
     frm_timeout_seconds: float = 5.0
 
+    # Background scheduler (periodic refresh/history jobs). Disabled in tests so
+    # background DB writes never race request handlers on the shared connection.
+    scheduler_enabled: bool = True
+
     # Optional authentication
     auth_enabled: bool = False
     auth_token: str = ""

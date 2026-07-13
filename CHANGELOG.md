@@ -6,6 +6,26 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Phase 9: Analytics
+
+- Pure analytics math (`app/analytics/compute.py`): series statistics
+  (min/max/avg/latest), an uptime fraction (samples with generation ≥ demand),
+  and a recent-vs-previous window comparison.
+- Analytics service aggregating the `power_samples` / `production_samples`
+  history into power KPIs and the busiest production lines; endpoints
+  `GET /api/v1/analytics/summary` and `/analytics/production/{item}`.
+- Analytics page (`pages/Analytics.tsx`, route `/analytics`, new sidebar entry):
+  KPI tiles (avg generation/consumption, uptime, avg battery), a generation-trend
+  card, and a top-production table with per-line trend arrows. Trend formatting is
+  pure (`utils/trend.ts`, unit-tested).
+
+### Changed
+
+- Added `SPIFFCO_SCHEDULER_ENABLED` (default true) to disable the periodic
+  scheduler; tests now run with it off, so background history writes no longer
+  race request handlers on the shared in-memory connection — removing pre-existing
+  intermittent failures and the `ProductionSample` identity-map warnings.
+
 ### Added — Phase 8: Blueprint System
 
 - Persisted blueprint library (`blueprints` table): name, description, category,

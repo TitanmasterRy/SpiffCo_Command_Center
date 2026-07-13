@@ -92,7 +92,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     scheduler = Scheduler()
     _register_jobs(scheduler, bus, game_state, world, logistics)
     app.state.scheduler = scheduler
-    await scheduler.start()
+    if settings.scheduler_enabled:
+        await scheduler.start()
+    else:
+        logger.info("Scheduler disabled (SPIFFCO_SCHEDULER_ENABLED=false)")
 
     logger.info("%s v%s started (%s)", settings.app_name, __version__, settings.environment.value)
     try:
