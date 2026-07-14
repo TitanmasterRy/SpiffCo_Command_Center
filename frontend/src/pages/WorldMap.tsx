@@ -133,6 +133,7 @@ export default function WorldMap() {
   const [region, setRegion] = useLocalStorage('spiffco.map.region', 'all');
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false); // mobile: collapse the filter panel
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [pendingName, setPendingName] = useState('');
 
@@ -196,17 +197,26 @@ export default function WorldMap() {
   return (
     <div className="flex h-full flex-col space-y-4">
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-slate-100">World Map</h1>
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          <h1 className="text-xl font-semibold text-slate-100 md:text-2xl">World Map</h1>
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search features…"
-            className="w-64 rounded-md border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-accent focus:outline-none"
+            className="min-w-0 flex-1 rounded-md border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-accent focus:outline-none md:w-64 md:flex-none"
           />
+          <button
+            onClick={() => setFiltersOpen((o) => !o)}
+            className="rounded-md border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-slate-300 md:hidden"
+            aria-expanded={filtersOpen}
+          >
+            Filters {filtersOpen ? '▲' : '▼'}
+          </button>
         </div>
 
+        {/* Filter panel — collapsible on mobile, always shown at md+. */}
+        <div className={`${filtersOpen ? 'block' : 'hidden'} space-y-3 md:block`}>
         {/* Dropdown filters — kept at the top, each with an icon. */}
         <div className="flex flex-wrap items-center gap-2">
           <SelectFilter
@@ -372,16 +382,17 @@ export default function WorldMap() {
             region shows only located features
           </span>
         </div>
+        </div>
       </div>
 
-      <Card className="relative min-h-[32rem] flex-1 !p-1">
+      <Card className="relative min-h-[24rem] flex-1 !p-1">
         <MapContainer
           crs={CRS.Simple}
           center={[-120, -50]}
           zoom={1}
           minZoom={-1}
           maxZoom={6}
-          className="h-[32rem] w-full rounded-md bg-[#10131a]"
+          className="h-[70vh] w-full rounded-md bg-[#10131a] md:h-[32rem]"
           attributionControl={false}
         >
           {showMap && (

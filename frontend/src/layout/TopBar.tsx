@@ -23,7 +23,7 @@ function sourceBadge(source?: DataSource): { kind: StatusKind; label: string } {
 }
 
 /** Top bar showing global connection health and app version. */
-export function TopBar() {
+export function TopBar({ onMenu }: { onMenu: () => void }) {
   const wsStatus = useConnectionStore((state) => state.wsStatus);
   const { data: health } = useHealth();
   const { data: info } = useAppInfo();
@@ -34,13 +34,22 @@ export function TopBar() {
   const source = sourceBadge(offline?.source);
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-surface-border bg-surface-raised px-6">
-      <div className="flex items-center gap-3">
-        <StatusBadge kind={ws.kind} label={ws.label} />
-        <StatusBadge kind={frm.kind} label={frm.label} />
-        <StatusBadge kind={source.kind} label={source.label} />
+    <header className="flex h-14 items-center justify-between gap-2 border-b border-surface-border bg-surface-raised px-3 md:px-6">
+      <div className="flex min-w-0 items-center gap-2 md:gap-3">
+        <button
+          onClick={onMenu}
+          aria-label="Open navigation menu"
+          className="-ml-1 rounded-md p-2 text-lg leading-none text-slate-300 hover:bg-surface-overlay md:hidden"
+        >
+          ☰
+        </button>
+        <div className="flex min-w-0 items-center gap-2 overflow-x-auto md:gap-3">
+          <StatusBadge kind={ws.kind} label={ws.label} />
+          <StatusBadge kind={frm.kind} label={frm.label} />
+          <StatusBadge kind={source.kind} label={source.label} />
+        </div>
       </div>
-      <div className="text-xs text-slate-500">
+      <div className="hidden shrink-0 text-xs text-slate-500 sm:block">
         {info ? `v${info.version} · ${info.environment}` : '…'}
       </div>
     </header>

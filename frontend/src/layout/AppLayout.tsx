@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useDashboardStreamHandler } from '../hooks/useDashboard';
 import { useLogisticsStreamHandler } from '../hooks/useLogistics';
@@ -23,12 +24,14 @@ export function AppLayout() {
     handlePowerEvent(message);
   });
 
+  const [navOpen, setNavOpen] = useState(false);
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <TopBar onMenu={() => setNavOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-3 md:p-6">
           <Outlet />
         </main>
       </div>
