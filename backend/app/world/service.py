@@ -20,7 +20,13 @@ class WorldProvider(Protocol):
 
 
 class WorldService:
-    """Refreshes world state and publishes player positions on ``world.players``."""
+    """Refreshes world state and publishes it on ``world.*`` topics.
+
+    ``world.players`` streams player positions on every refresh; ``world.features``
+    streams the full feature list, but only when feature state actually changed
+    (e.g. an artifact was collected or a miner was installed), so the map stays
+    live without re-sending a static world every tick.
+    """
 
     def __init__(self, provider: WorldProvider, bus: EventBus) -> None:
         self._provider = provider
@@ -39,11 +45,25 @@ class WorldService:
         return self._latest
 
     async def refresh(self) -> WorldSnapshot:
-        """Pull a fresh snapshot and publish player positions."""
+        """Pull a fresh snapshot and publish player and feature updates."""
+        previous = self._latest
         self._latest = self._provider.snapshot()
         self._bus.publish(
             "world.players", [p.model_dump(mode="json") for p in self._latest.players]
         )
+        if previous is None or previous.features != self._latest.features:
+            self._bus.publish(
+                "world.features",
+                [f.model_dump(mode="json") for f in self._latest.features],
+            )
+        for topic, attr in (
+            ("world.belts", "belts"),
+            ("world.cables", "cables"),
+            ("world.pipes", "pipes"),
+        ):
+            latest = getattr(self._latest, attr)
+            if previous is None or getattr(previous, attr) != latest:
+                self._bus.publish(topic, [b.model_dump(mode="json") for b in latest])
         return self._latest
 
 

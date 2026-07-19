@@ -6,6 +6,38 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — World Map: marker icons hidden behind the pin disc
+
+- Marker icon overlays now paint above the pin's head circle. Leaflet's
+  stylesheet gives inline SVGs `z-index: 200`, so the colored disc was covering
+  the icon `<img>` (which had `z-index: auto`) and every marker read as a plain
+  colored circle. The icon image and glyph fallback now set `z-index: 400`
+  (`utils/mapIcons.ts`). Also floored the icon to a legible 16px minimum so it
+  no longer shrinks to an indistinct dot at low zoom.
+
+### Changed — World Map: SCIM-inspired navigation feel
+
+- Studied the SC-InteractiveMap source (educational only — its license forbids
+  code/asset reuse, so everything is reimplemented) and adopted its map-feel
+  parameters: fractional zoom in 0.25 steps (`zoomSnap`/`zoomDelta`), a wider
+  zoom range (−1.5 to 8) for close-up inspection, soft pan bounds so the view
+  can't wander into the void, and canvas rendering for path layers.
+- Marker icons now scale with zoom level (`iconScale` in `utils/mapIcons.ts`):
+  smaller when the whole map is visible, larger up close.
+- The map view (center + zoom) persists in localStorage across visits, and the
+  map now fills the page height instead of a fixed 70vh/32rem box.
+- Leaflet tooltips/popups are dark-themed to match the app.
+
+### Added — External Tools embeds
+
+- New "External Tools" sidebar section embedding community planners in-app
+  (`src/pages/ExternalTool.tsx`, routes under `/tools/*`): the
+  satisfactory-calculator.com Production and Power planners, the
+  satisfactorytools.com production planner, and the SCIM interactive map
+  (save-file based; the World Map page remains the live-feed map). Each embed
+  has reload and open-in-new-tab controls; embedded apps keep their own state
+  inside the frame.
+
 ### Added — Deployment: single-image Fly.io target
 
 - The FastAPI app can now serve the built SPA from the same origin

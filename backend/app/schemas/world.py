@@ -55,6 +55,16 @@ class PlayerInfo(BaseModel):
     online: bool = True
 
 
+class BeltPath(BaseModel):
+    """A conveyor belt segment rendered as a polyline on the map."""
+
+    id: str
+    name: str
+    class_name: str = Field(description="Short UE class, e.g. Build_ConveyorBeltMk1_C")
+    points: list[Position] = Field(min_length=2, description="Spline points in cm")
+    items_per_minute: float | None = None
+
+
 class WorldSnapshot(BaseModel):
     """Static features plus live player positions."""
 
@@ -62,6 +72,11 @@ class WorldSnapshot(BaseModel):
     source: Literal["simulation", "frm", "save"]
     players: list[PlayerInfo]
     features: list[MapFeature]
+    belts: list[BeltPath] = Field(default_factory=list)
+    cables: list[BeltPath] = Field(
+        default_factory=list, description="Power lines (straight segments)"
+    )
+    pipes: list[BeltPath] = Field(default_factory=list, description="Pipeline splines")
 
 
 class CustomMarkerIn(BaseModel):

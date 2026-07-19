@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
-import type { CustomMarkerIn, PlayerInfo, WorldSnapshot } from '../types/world';
+import type { CustomMarkerIn, WorldSnapshot } from '../types/world';
 import type { WsEnvelope } from '../types/api';
+import { mergeWorldStream } from '../utils/worldStream';
 
 const SNAPSHOT_KEY = ['world', 'snapshot'];
 const MARKERS_KEY = ['world', 'markers'];
@@ -27,13 +28,19 @@ export function useMarkers() {
   return { ...query, create, remove };
 }
 
-/** Apply pushed `world.players` updates to the cached snapshot. */
+/**
+ * Apply pushed world updates to the cached snapshot.
+ *
+ * `world.players` streams on every backend refresh; `world.features` arrives
+ * only when feature state changed (artifact collected, miner installed, …) so
+ * the map updates live without a page refresh.
+ */
 export function useWorldStreamHandler() {
   const queryClient = useQueryClient();
   return (message: WsEnvelope) => {
-    if (message.topic !== 'world.players') return;
+    if (message.topic !== 'world.players' && message.topic !== 'world.features') return;
     queryClient.setQueryData<WorldSnapshot>(SNAPSHOT_KEY, (snapshot) =>
-      snapshot ? { ...snapshot, players: message.payload as PlayerInfo[] } : snapshot,
+      snapshot ? mergeWorldStream(snapshot, message) : snapshot,
     );
   };
 }

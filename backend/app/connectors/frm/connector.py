@@ -105,6 +105,10 @@ class FrmConnector:
         artifacts = await self._get_optional("getArtifacts")
         slugs = await self._get_optional("getPowerSlug")
         drop_pods = await self._get_optional("getDropPod")
+        belts = await self._get_optional("getBelts")
+        cables = await self._get_optional("getCables")
+        pipes = await self._get_optional("getPipes")
+        generators = await self._get_optional("getGenerators")
         self._dashboard = normalize.normalize_dashboard(power, factory)
         self._world = normalize.normalize_world(
             players,
@@ -113,6 +117,10 @@ class FrmConnector:
             artifacts_raw=artifacts,
             slugs_raw=slugs,
             drop_pods_raw=drop_pods,
+            belts_raw=belts,
+            cables_raw=cables,
+            pipes_raw=pipes,
+            generators_raw=generators,
         )
         self._logistics = normalize.normalize_logistics(stations, trains)
         self._set_state(ConnectionState.CONNECTED)

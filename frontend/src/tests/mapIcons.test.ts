@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MapFeature } from '../types/world';
-import { featureIcon, PURITY_COLOR } from '../utils/mapIcons';
+import { COLLECTED_OPACITY, featureIcon, PURITY_COLOR } from '../utils/mapIcons';
+import { SCIM_LAYER_BY_ID } from '../utils/scimLayers';
 
 const feature = (partial: Partial<MapFeature>): MapFeature => ({
   id: 'x',
@@ -15,22 +16,37 @@ const feature = (partial: Partial<MapFeature>): MapFeature => ({
 
 const html = (f: MapFeature): string => String(featureIcon(f).options.html);
 
-describe('featureIcon', () => {
-  it('colors resource nodes red/yellow/green by purity', () => {
-    expect(html(feature({ type: 'resource_node', meta: { purity: 'impure' } }))).toContain(
-      PURITY_COLOR.impure,
-    );
-    expect(html(feature({ type: 'resource_node', meta: { purity: 'normal' } }))).toContain(
-      PURITY_COLOR.normal,
-    );
-    expect(html(feature({ type: 'resource_node', meta: { purity: 'pure' } }))).toContain(
-      PURITY_COLOR.pure,
-    );
+describe('featureIcon (SCIM pin style)', () => {
+  it('fills resource-node pins red/orange/green by purity (SCIM palette)', () => {
+    for (const purity of ['impure', 'normal', 'pure'] as const) {
+      expect(
+        html(feature({ type: 'resource_node', meta: { resource: 'iron-ore', purity } })),
+      ).toContain(PURITY_COLOR[purity]);
+    }
   });
 
-  it('dims collected pickups and occupied nodes', () => {
-    expect(html(feature({ type: 'artifact', collected: true }))).toContain('opacity:0.5');
-    expect(html(feature({ type: 'resource_node', occupied: true }))).toContain('opacity:0.5');
+  it('rings node pins with the SCIM resource color', () => {
+    const ironLayer = SCIM_LAYER_BY_ID.get('ironPure');
+    expect(ironLayer?.outsideColor).toBeTruthy();
+    expect(
+      html(feature({ type: 'resource_node', meta: { resource: 'iron-ore', purity: 'pure' } })),
+    ).toContain(String(ironLayer?.outsideColor));
+  });
+
+  it('uses SCIM layer colors and icon for mapped pickups', () => {
+    const sloop = SCIM_LAYER_BY_ID.get('somersloops');
+    const markup = html(feature({ type: 'artifact', meta: { kind: 'somersloop' } }));
+    expect(markup).toContain(String(sloop?.outsideColor));
+    expect(markup).toContain(String(sloop?.icon));
+  });
+
+  it('dims collected pickups and occupied nodes to SCIM opacity', () => {
+    expect(html(feature({ type: 'artifact', collected: true }))).toContain(
+      `opacity:${COLLECTED_OPACITY}`,
+    );
+    expect(html(feature({ type: 'resource_node', occupied: true }))).toContain(
+      `opacity:${COLLECTED_OPACITY}`,
+    );
     expect(html(feature({ type: 'resource_node', occupied: false }))).toContain('opacity:1');
   });
 });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { MapFeature } from '../types/world';
+import { featureLayerId } from '../utils/scimLayers';
 import {
   applyWorldFilters,
   metaOptions,
-  pickupKindOptions,
   producesOptions,
   type WorldFilters,
 } from '../utils/worldFilters';
@@ -44,40 +44,79 @@ const FEATURES: MapFeature[] = [
   }),
 ];
 
+// Every layer that appears in the fixture set, enabled.
+const ALL_ON: Record<string, boolean> = {
+  'live:factory': true,
+  ironPure: true,
+  coalNormal: true,
+  somersloops: true,
+};
+
 const DEFAULTS: WorldFilters = {
-  visible: {
-    factory: true,
-    resource_node: true,
-    resource_well: true,
-    geyser: true,
-    power_plant: true,
-    train_station: true,
-    drone_port: true,
-    truck_station: true,
-    artifact: true,
-    collectible: true,
-    wreck: true,
-  },
-  pickupKinds: { somersloop: true, 'mercer-sphere': true },
+  activeLayers: ALL_ON,
   search: '',
   hideCollected: false,
-  resource: 'all',
-  purity: 'all',
   nodeStatus: 'all',
   produces: 'all',
   region: 'all',
 };
 
+describe('featureLayerId', () => {
+  it('maps nodes onto SCIM resource+purity layers', () => {
+    expect(featureLayerId(FEATURES[1])).toBe('ironPure');
+    expect(featureLayerId(FEATURES[2])).toBe('coalNormal');
+  });
+
+  it('maps pickups by kind, including slug aliases', () => {
+    expect(featureLayerId(FEATURES[3])).toBe('somersloops');
+    expect(
+      featureLayerId(feature({ type: 'artifact', meta: { kind: 'blue-power-slug' } })),
+    ).toBe('greenSlugs'); // SCIM calls the in-game blue slugs "green"
+    expect(
+      featureLayerId(feature({ type: 'artifact', meta: { kind: 'power-slug-green' } })),
+    ).toBe('greenSlugs');
+    expect(featureLayerId(feature({ type: 'wreck', meta: { kind: 'crash-site' } }))).toBe(
+      'hardDrives',
+    );
+    expect(
+      featureLayerId(feature({ type: 'collectible', meta: { kind: 'paleberry' } })),
+    ).toBe('paleBerry');
+  });
+
+  it('falls back to live:<type> for unmapped features', () => {
+    expect(featureLayerId(FEATURES[0])).toBe('live:factory');
+    expect(featureLayerId(feature({ type: 'artifact', meta: { kind: 'mystery' } }))).toBe(
+      'live:artifact',
+    );
+  });
+
+  it('maps wells and geysers onto their SCIM layers', () => {
+    expect(
+      featureLayerId(
+        feature({ type: 'resource_well', meta: { resource: 'nitrogen-gas', purity: 'pure' } }),
+      ),
+    ).toBe('nitrogenGasWellPure');
+    expect(featureLayerId(feature({ type: 'geyser', meta: { purity: 'impure' } }))).toBe(
+      'geyserImpure',
+    );
+  });
+});
+
 describe('applyWorldFilters', () => {
-  it('passes everything with defaults', () => {
+  it('passes everything when all layers are on', () => {
     expect(applyWorldFilters(FEATURES, DEFAULTS)).toHaveLength(4);
   });
 
-  it('filters nodes by resource, purity, and status', () => {
-    expect(applyWorldFilters(FEATURES, { ...DEFAULTS, resource: 'iron-ore' }).map((f) => f.id))
-      .toEqual(['f1', 'n1', 'a1']); // non-node types unaffected
-    expect(applyWorldFilters(FEATURES, { ...DEFAULTS, purity: 'normal' }).map((f) => f.id))
-      .toContain('n2');
+  it('shows only features whose layer is enabled', () => {
+    const onlyIron = applyWorldFilters(FEATURES, {
+      ...DEFAULTS,
+      activeLayers: { ironPure: true },
+    });
+    expect(onlyIron.map((f) => f.id)).toEqual(['n1']);
+    expect(applyWorldFilters(FEATURES, { ...DEFAULTS, activeLayers: {} })).toHaveLength(0);
+  });
+
+  it('filters nodes by miner status', () => {
     expect(
       applyWorldFilters(FEATURES, { ...DEFAULTS, nodeStatus: 'free' }).map((f) => f.id),
     ).not.toContain('n2');
@@ -98,21 +137,8 @@ describe('applyWorldFilters', () => {
     ).toEqual(['f1', 'n1', 'n2']);
   });
 
-  it('search and layer visibility still apply', () => {
+  it('search still applies', () => {
     expect(applyWorldFilters(FEATURES, { ...DEFAULTS, search: 'iron' })).toHaveLength(2);
-    const noNodes = { ...DEFAULTS.visible, resource_node: false };
-    expect(applyWorldFilters(FEATURES, { ...DEFAULTS, visible: noNodes })).toHaveLength(2);
-  });
-
-  it('pickups show only when their kind is enabled', () => {
-    // a1 (somersloop) hidden when its kind is off; non-pickups unaffected.
-    const off = applyWorldFilters(FEATURES, { ...DEFAULTS, pickupKinds: {} }).map((f) => f.id);
-    expect(off).toEqual(['f1', 'n1', 'n2']);
-    const on = applyWorldFilters(FEATURES, {
-      ...DEFAULTS,
-      pickupKinds: { somersloop: true },
-    }).map((f) => f.id);
-    expect(on).toContain('a1');
   });
 
   it('produces filter constrains only factories', () => {
@@ -128,12 +154,6 @@ describe('applyWorldFilters', () => {
 describe('producesOptions', () => {
   it('returns sorted distinct factory output items', () => {
     expect(producesOptions(FEATURES)).toEqual(['Iron Plate', 'Screw']);
-  });
-});
-
-describe('pickupKindOptions', () => {
-  it('returns sorted distinct pickup kinds', () => {
-    expect(pickupKindOptions(FEATURES)).toEqual(['somersloop']);
   });
 });
 

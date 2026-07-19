@@ -38,11 +38,27 @@ export interface PlayerInfo {
   online: boolean;
 }
 
+/** A conveyor belt segment rendered as a polyline on the map. */
+export interface BeltPath {
+  id: string;
+  name: string;
+  /** Short UE class, e.g. Build_ConveyorBeltMk1_C. */
+  class_name: string;
+  /** Spline points in cm. */
+  points: Position[];
+  items_per_minute: number | null;
+}
+
 export interface WorldSnapshot {
   generated_at: string;
   source: 'simulation' | 'frm' | 'save';
   players: PlayerInfo[];
   features: MapFeature[];
+  belts: BeltPath[];
+  /** Power lines (straight segments). */
+  cables: BeltPath[];
+  /** Pipeline splines. */
+  pipes: BeltPath[];
 }
 
 export interface CustomMarkerIn {

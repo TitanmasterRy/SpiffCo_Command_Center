@@ -29,7 +29,14 @@ from app.schemas.logistics import (
 from app.schemas.logistics import (
     LogisticsSummary as LogSummary,
 )
-from app.schemas.world import FeatureType, MapFeature, PlayerInfo, Position, WorldSnapshot
+from app.schemas.world import (
+    BeltPath,
+    FeatureType,
+    MapFeature,
+    PlayerInfo,
+    Position,
+    WorldSnapshot,
+)
 
 Raw = dict[str, Any]
 
@@ -242,6 +249,106 @@ def _pickup_features(
     return features
 
 
+def normalize_belts(belts_raw: Iterable[Raw]) -> list[BeltPath]:
+    """Map FRM ``getBelts`` entries to :class:`BeltPath` polylines.
+
+    Uses the belt's ``SplineData`` (world-space cm points along the belt) when
+    present, falling back to the straight ``location0`` → ``location1`` segment.
+    Entries without two usable points are dropped.
+    """
+    belts: list[BeltPath] = []
+    for i, b in enumerate(belts_raw):
+        points = [
+            Position(x=_num(p.get("x")), y=_num(p.get("y")), z=_num(p.get("z")))
+            for p in b.get("SplineData") or []
+            if isinstance(p, dict)
+        ]
+        if len(points) < 2:
+            ends = [b.get("location0"), b.get("location1")]
+            points = [
+                Position(x=_num(p.get("x")), y=_num(p.get("y")), z=_num(p.get("z")))
+                for p in ends
+                if isinstance(p, dict)
+            ]
+        if len(points) < 2:
+            continue
+        ipm = b.get("ItemsPerMinute")
+        belts.append(
+            BeltPath(
+                id=_slug(f"belt-{b.get('ID', i)}"),
+                name=str(b.get("Name") or "Conveyor Belt"),
+                class_name=str(b.get("ClassName") or "Build_ConveyorBeltMk1_C"),
+                points=points,
+                items_per_minute=_num(ipm) if ipm is not None else None,
+            )
+        )
+    return belts
+
+
+def _building_status(b: Raw) -> str:
+    """Stable per-building status: operational / caution (idle) / error.
+
+    A coarse bucket (not a live percentage) so feature equality stays stable
+    between polls and ``world.features`` is only re-published on real change.
+    """
+    power_info = b.get("PowerInfo") or b.get("powerInfo") or {}
+    if bool(power_info.get("FuseTriggered")) or b.get("IsConfigured") is False:
+        return "error"
+    productivity = _num(b.get("Productivity", b.get("productivity")), _num(b.get("ManuSpeed")))
+    if bool(b.get("IsProducing", productivity > 0)):
+        return "operational"
+    return "caution"
+
+
+def _building_features(
+    factory_raw: Iterable[Raw], generators_raw: Iterable[Raw]
+) -> list[MapFeature]:
+    """Production buildings (``factory``) and generators (``power_plant``).
+
+    Every building is its own map feature — the id must be unique per building
+    (FRM ``ID`` when present, else the enumeration index) so same-class
+    buildings don't collide into one marker.
+    """
+    features: list[MapFeature] = []
+    typed: list[tuple[FeatureType, Iterable[Raw]]] = [
+        ("factory", factory_raw),
+        ("power_plant", generators_raw),
+    ]
+    for feature_type, entries in typed:
+        for i, b in enumerate(entries):
+            name = str(b.get("Name") or "Factory")
+            meta: dict[str, str | float | int] = {"kind": _slug(name)}
+            # Class + yaw let the frontend draw the building's real footprint
+            # outline (SCIM detailed models are keyed by short UE class name).
+            class_name = str(b.get("ClassName") or "")
+            if class_name:
+                meta["class_name"] = class_name
+            loc = b.get("location") or b.get("Location") or {}
+            if isinstance(loc, dict) and loc.get("rotation") is not None:
+                meta["rotation"] = _num(loc.get("rotation"))
+            meta["status"] = _building_status(b)
+            power_info = b.get("PowerInfo") or b.get("powerInfo") or {}
+            power = round(_num(power_info.get("PowerConsumed")))
+            if power > 0:
+                meta["power_mw"] = power
+            outputs = [
+                str(o.get("Name") or o.get("item") or "") for o in b.get("production", []) or []
+            ]
+            outputs = [o for o in outputs if o]
+            if outputs:
+                meta["produces"] = ", ".join(dict.fromkeys(outputs))
+            features.append(
+                MapFeature(
+                    id=_slug(f"{feature_type}-{b.get('ID', i)}"),
+                    type=feature_type,
+                    name=name,
+                    position=_location(b),
+                    meta=meta,
+                )
+            )
+    return features
+
+
 def normalize_world(
     players_raw: Iterable[Raw],
     factory_raw: Iterable[Raw],
@@ -250,14 +357,20 @@ def normalize_world(
     artifacts_raw: Iterable[Raw] | None = None,
     slugs_raw: Iterable[Raw] | None = None,
     drop_pods_raw: Iterable[Raw] | None = None,
+    belts_raw: Iterable[Raw] | None = None,
+    cables_raw: Iterable[Raw] | None = None,
+    pipes_raw: Iterable[Raw] | None = None,
+    generators_raw: Iterable[Raw] | None = None,
     source: str = "frm",
 ) -> WorldSnapshot:
     """Build a world snapshot from FRM players / factories / resource nodes.
 
     Pickups are optional: *artifacts_raw* (Somersloops/Mercer Spheres) and
     *slugs_raw* (power slugs) render as artifacts; *drop_pods_raw* as crash-site
-    wrecks. FRM 1.5.x exposes no endpoint for wild food, so that category stays
-    empty on live data.
+    wrecks. *generators_raw* render as ``power_plant`` buildings; *belts_raw* /
+    *cables_raw* / *pipes_raw* become the belt / power-line / pipeline path
+    layers. FRM 1.5.x exposes no endpoint for wild food or foundations, so
+    those stay empty on live data.
     """
     players = [
         PlayerInfo(
@@ -268,26 +381,7 @@ def normalize_world(
         )
         for i, p in enumerate(players_raw, start=1)
     ]
-    features: list[MapFeature] = []
-    for i, b in enumerate(factory_raw):
-        name = str(b.get("Name") or "Factory")
-        # Every building is its own map feature — the id must be unique per
-        # building (FRM ``ID`` when present, else the enumeration index) so
-        # same-class buildings don't collide into one marker.
-        meta: dict[str, str | float | int] = {"kind": _slug(name)}
-        outputs = [str(o.get("Name") or o.get("item") or "") for o in b.get("production", []) or []]
-        outputs = [o for o in outputs if o]
-        if outputs:
-            meta["produces"] = ", ".join(dict.fromkeys(outputs))
-        features.append(
-            MapFeature(
-                id=_slug(f"factory-{b.get('ID', i)}"),
-                type="factory",
-                name=name,
-                position=_location(b),
-                meta=meta,
-            )
-        )
+    features = _building_features(factory_raw, generators_raw or [])
     for node in nodes_raw:
         base = str(node.get("Name") or node.get("ResourceForm") or "Node")
         purity = str(node.get("Purity") or "normal").lower()
@@ -316,6 +410,9 @@ def normalize_world(
         source=source,
         players=players,
         features=features,
+        belts=normalize_belts(belts_raw or []),
+        cables=normalize_belts(cables_raw or []),
+        pipes=normalize_belts(pipes_raw or []),
     )
 
 

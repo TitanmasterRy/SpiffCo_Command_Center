@@ -240,3 +240,95 @@ async def test_connector_start_raises_when_unreachable() -> None:
     with pytest.raises(UpstreamUnavailableError):
         await connector.start()
     await connector.stop()
+
+
+def test_normalize_world_factory_meta_has_class_and_rotation() -> None:
+    factory = [
+        {
+            "Name": "Refinery",
+            "ClassName": "Build_OilRefinery_C",
+            "location": {"x": 100, "y": 200, "z": 0, "rotation": 40.5},
+        }
+    ]
+    world = normalize.normalize_world([], factory, [])
+    meta = world.features[0].meta
+    assert meta["class_name"] == "Build_OilRefinery_C"
+    assert meta["rotation"] == 40.5
+
+
+def test_normalize_belts_spline_and_fallback() -> None:
+    belts_raw = [
+        {  # spline points win
+            "ID": "Build_ConveyorBeltMk1_C_1",
+            "Name": "Conveyor Belt Mk.1",
+            "ClassName": "Build_ConveyorBeltMk1_C",
+            "SplineData": [
+                {"x": 0, "y": 0, "z": 0},
+                {"x": 100, "y": 50, "z": 0},
+                {"x": 200, "y": 100, "z": 0},
+            ],
+            "ItemsPerMinute": 60,
+        },
+        {  # no spline -> straight segment from the endpoint locations
+            "ID": 2,
+            "Name": "Conveyor Belt Mk.5",
+            "ClassName": "Build_ConveyorBeltMk5_C",
+            "location0": {"x": 0, "y": 0, "z": 0},
+            "location1": {"x": 800, "y": 0, "z": 0},
+        },
+        {"ID": 3, "Name": "broken"},  # unusable -> dropped
+    ]
+    belts = normalize.normalize_belts(belts_raw)
+    assert len(belts) == 2
+    assert len(belts[0].points) == 3
+    assert belts[0].items_per_minute == 60
+    assert belts[1].class_name == "Build_ConveyorBeltMk5_C"
+    assert belts[1].points[1].x == 800
+    assert belts[1].items_per_minute is None
+
+    world = normalize.normalize_world([], [], [], belts_raw=belts_raw)
+    assert len(world.belts) == 2
+
+
+def test_normalize_world_generators_cables_pipes_and_status() -> None:
+    generators = [
+        {
+            "Name": "Coal-Powered Generator",
+            "ClassName": "Build_GeneratorCoal_C",
+            "location": {"x": 1, "y": 2, "z": 0, "rotation": 90},
+            "IsProducing": True,
+        }
+    ]
+    cables = [
+        {
+            "ID": "Build_PowerLine_C_1",
+            "Name": "Power Line",
+            "ClassName": "Build_PowerLine_C",
+            "location0": {"x": 0, "y": 0, "z": 0},
+            "location1": {"x": 500, "y": 500, "z": 0},
+        }
+    ]
+    pipes = [
+        {
+            "ID": "Build_Pipeline_C_1",
+            "Name": "Pipeline Mk.1",
+            "ClassName": "Build_Pipeline_C",
+            "SplineData": [{"x": 0, "y": 0, "z": 0}, {"x": 10, "y": 0, "z": 0}],
+        }
+    ]
+    unpowered = {
+        "Name": "Smelter",
+        "location": {"x": 0, "y": 0, "z": 0},
+        "PowerInfo": {"FuseTriggered": True, "PowerConsumed": 4.2},
+    }
+    world = normalize.normalize_world(
+        [], [unpowered], [], generators_raw=generators, cables_raw=cables, pipes_raw=pipes
+    )
+    plant = next(f for f in world.features if f.type == "power_plant")
+    assert plant.meta["class_name"] == "Build_GeneratorCoal_C"
+    assert plant.meta["status"] == "operational"
+    smelter = next(f for f in world.features if f.type == "factory")
+    assert smelter.meta["status"] == "error"
+    assert smelter.meta["power_mw"] == 4
+    assert len(world.cables) == 1 and world.cables[0].class_name == "Build_PowerLine_C"
+    assert len(world.pipes) == 1 and len(world.pipes[0].points) == 2

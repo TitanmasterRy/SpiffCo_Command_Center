@@ -75,3 +75,49 @@ def test_players_move_between_snapshots() -> None:
     second = provider.snapshot()
     assert first.players[0].position.x != second.players[0].position.x
     assert first.features == second.features  # static features stay put
+
+
+async def test_refresh_publishes_features_only_on_change() -> None:
+    from datetime import UTC, datetime
+
+    from app.schemas.world import MapFeature, Position, WorldSnapshot
+    from app.services.event_bus import EventBus
+    from app.world.service import WorldService
+
+    def snapshot(collected: bool) -> WorldSnapshot:
+        return WorldSnapshot(
+            generated_at=datetime.now(tz=UTC),
+            source="simulation",
+            players=[],
+            features=[
+                MapFeature(
+                    id="artifact-1",
+                    type="artifact",
+                    name="Somersloop",
+                    position=Position(x=0, y=0, z=0),
+                    collected=collected,
+                )
+            ],
+        )
+
+    class Provider:
+        def __init__(self) -> None:
+            self.collected = False
+
+        def snapshot(self) -> WorldSnapshot:
+            return snapshot(self.collected)
+
+    bus = EventBus()
+    subscription = bus.subscribe("world.features")
+    provider = Provider()
+    service = WorldService(provider, bus)
+
+    await service.refresh()  # first refresh always publishes
+    first = await subscription.get()
+    assert first.payload[0]["collected"] is False
+
+    await service.refresh()  # unchanged features -> no publish
+    provider.collected = True
+    await service.refresh()  # collected flipped -> publish
+    second = await subscription.get()
+    assert second.payload[0]["collected"] is True

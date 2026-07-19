@@ -1,0 +1,1068 @@
+{
+  "categories": [
+    {
+      "id": "resource_nodes",
+      "name": "Resource nodes",
+      "groups": [
+        {
+          "name": "Limestone",
+          "type": "Desc_Stone_C",
+          "layers": [
+            {
+              "id": "limestoneImpure",
+              "name": "Limestone (Impure)",
+              "outsideColor": "#e3dac9",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/Stone_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 15,
+              "match": {
+                "kind": "node",
+                "resource": "limestone",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "limestoneNormal",
+              "name": "Limestone (Normal)",
+              "outsideColor": "#e3dac9",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/Stone_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 50,
+              "match": {
+                "kind": "node",
+                "resource": "limestone",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "limestonePure",
+              "name": "Limestone (Pure)",
+              "outsideColor": "#e3dac9",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/Stone_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 29,
+              "match": {
+                "kind": "node",
+                "resource": "limestone",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Iron Ore",
+          "type": "Desc_OreIron_C",
+          "layers": [
+            {
+              "id": "ironImpure",
+              "name": "Iron Ore (Impure)",
+              "outsideColor": "#cbcdcd",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_iron_new_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 39,
+              "match": {
+                "kind": "node",
+                "resource": "iron-ore",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "ironNormal",
+              "name": "Iron Ore (Normal)",
+              "outsideColor": "#cbcdcd",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_iron_new_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 42,
+              "match": {
+                "kind": "node",
+                "resource": "iron-ore",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "ironPure",
+              "name": "Iron Ore (Pure)",
+              "outsideColor": "#cbcdcd",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_iron_new_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 46,
+              "match": {
+                "kind": "node",
+                "resource": "iron-ore",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Copper Ore",
+          "type": "Desc_OreCopper_C",
+          "layers": [
+            {
+              "id": "copperImpure",
+              "name": "Copper Ore (Impure)",
+              "outsideColor": "#b87333",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_copper_new_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 13,
+              "match": {
+                "kind": "node",
+                "resource": "copper-ore",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "copperNormal",
+              "name": "Copper Ore (Normal)",
+              "outsideColor": "#b87333",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_copper_new_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 29,
+              "match": {
+                "kind": "node",
+                "resource": "copper-ore",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "copperPure",
+              "name": "Copper Ore (Pure)",
+              "outsideColor": "#b87333",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_copper_new_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 13,
+              "match": {
+                "kind": "node",
+                "resource": "copper-ore",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Caterium Ore",
+          "type": "Desc_OreGold_C",
+          "layers": [
+            {
+              "id": "cateriumImpure",
+              "name": "Caterium Ore (Impure)",
+              "outsideColor": "#ffd700",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_CateriumOre_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 0,
+              "match": {
+                "kind": "node",
+                "resource": "caterium-ore",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "cateriumNormal",
+              "name": "Caterium Ore (Normal)",
+              "outsideColor": "#ffd700",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_CateriumOre_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 9,
+              "match": {
+                "kind": "node",
+                "resource": "caterium-ore",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "cateriumPure",
+              "name": "Caterium Ore (Pure)",
+              "outsideColor": "#ffd700",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_CateriumOre_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 8,
+              "match": {
+                "kind": "node",
+                "resource": "caterium-ore",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coal",
+          "type": "Desc_Coal_C",
+          "layers": [
+            {
+              "id": "coalImpure",
+              "name": "Coal (Impure)",
+              "outsideColor": "#030405",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_CoalOre_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 15,
+              "match": {
+                "kind": "node",
+                "resource": "coal",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "coalNormal",
+              "name": "Coal (Normal)",
+              "outsideColor": "#030405",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_CoalOre_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 31,
+              "match": {
+                "kind": "node",
+                "resource": "coal",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "coalPure",
+              "name": "Coal (Pure)",
+              "outsideColor": "#030405",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_CoalOre_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 16,
+              "match": {
+                "kind": "node",
+                "resource": "coal",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crude Oil",
+          "type": "Desc_LiquidOil_C",
+          "layers": [
+            {
+              "id": "oilImpure",
+              "name": "Crude Oil (Impure)",
+              "outsideColor": "#330033",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 10,
+              "match": {
+                "kind": "node",
+                "resource": "crude-oil",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "oilNormal",
+              "name": "Crude Oil (Normal)",
+              "outsideColor": "#330033",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 12,
+              "match": {
+                "kind": "node",
+                "resource": "crude-oil",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "oilPure",
+              "name": "Crude Oil (Pure)",
+              "outsideColor": "#330033",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 8,
+              "match": {
+                "kind": "node",
+                "resource": "crude-oil",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sulfur",
+          "type": "Desc_Sulfur_C",
+          "layers": [
+            {
+              "id": "sulfurImpure",
+              "name": "Sulfur (Impure)",
+              "outsideColor": "#edff21",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/Sulfur_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 6,
+              "match": {
+                "kind": "node",
+                "resource": "sulfur",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "sulfurNormal",
+              "name": "Sulfur (Normal)",
+              "outsideColor": "#edff21",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/Sulfur_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 5,
+              "match": {
+                "kind": "node",
+                "resource": "sulfur",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "sulfurPure",
+              "name": "Sulfur (Pure)",
+              "outsideColor": "#edff21",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/Sulfur_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 5,
+              "match": {
+                "kind": "node",
+                "resource": "sulfur",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bauxite",
+          "type": "Desc_OreBauxite_C",
+          "layers": [
+            {
+              "id": "bauxiteImpure",
+              "name": "Bauxite (Impure)",
+              "outsideColor": "#a76e56",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_Bauxite_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 5,
+              "match": {
+                "kind": "node",
+                "resource": "bauxite",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "bauxiteNormal",
+              "name": "Bauxite (Normal)",
+              "outsideColor": "#a76e56",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_Bauxite_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 6,
+              "match": {
+                "kind": "node",
+                "resource": "bauxite",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "bauxitePure",
+              "name": "Bauxite (Pure)",
+              "outsideColor": "#a76e56",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_Bauxite_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 6,
+              "match": {
+                "kind": "node",
+                "resource": "bauxite",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Raw Quartz",
+          "type": "Desc_RawQuartz_C",
+          "layers": [
+            {
+              "id": "quartzImpure",
+              "name": "Raw Quartz (Impure)",
+              "outsideColor": "#791d0d",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_QuartzCrystal_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 3,
+              "match": {
+                "kind": "node",
+                "resource": "raw-quartz",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "quartzNormal",
+              "name": "Raw Quartz (Normal)",
+              "outsideColor": "#791d0d",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_QuartzCrystal_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 7,
+              "match": {
+                "kind": "node",
+                "resource": "raw-quartz",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "quartzPure",
+              "name": "Raw Quartz (Pure)",
+              "outsideColor": "#791d0d",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_QuartzCrystal_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 7,
+              "match": {
+                "kind": "node",
+                "resource": "raw-quartz",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Uranium",
+          "type": "Desc_OreUranium_C",
+          "layers": [
+            {
+              "id": "uraniumImpure",
+              "name": "Uranium (Impure)",
+              "outsideColor": "#cdf6ab",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_UraniumOre_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 3,
+              "match": {
+                "kind": "node",
+                "resource": "uranium",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "uraniumNormal",
+              "name": "Uranium (Normal)",
+              "outsideColor": "#cdf6ab",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_UraniumOre_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 2,
+              "match": {
+                "kind": "node",
+                "resource": "uranium",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "uraniumPure",
+              "name": "Uranium (Pure)",
+              "outsideColor": "#cdf6ab",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_UraniumOre_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 0,
+              "match": {
+                "kind": "node",
+                "resource": "uranium",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SAM",
+          "type": "Desc_SAM_C",
+          "layers": [
+            {
+              "id": "samImpure",
+              "name": "SAM (Impure)",
+              "outsideColor": "#122f3b",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_SameOre_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 10,
+              "match": {
+                "kind": "node",
+                "resource": "sam",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "samNormal",
+              "name": "SAM (Normal)",
+              "outsideColor": "#122f3b",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_SameOre_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 6,
+              "match": {
+                "kind": "node",
+                "resource": "sam",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "samPure",
+              "name": "SAM (Pure)",
+              "outsideColor": "#122f3b",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_SameOre_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 3,
+              "match": {
+                "kind": "node",
+                "resource": "sam",
+                "purity": "pure"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "resource_wells",
+      "name": "Resource wells",
+      "groups": [
+        {
+          "name": "Nitrogen Gas",
+          "type": "Desc_NitrogenGas_C",
+          "layers": [
+            {
+              "id": "nitrogenGasWellImpure",
+              "name": "Nitrogen Gas (Impure)",
+              "outsideColor": "#ffffff",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/IconDesc_NitricAcid_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 2,
+              "match": {
+                "kind": "well",
+                "resource": "nitrogen-gas",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "nitrogenGasWellNormal",
+              "name": "Nitrogen Gas (Normal)",
+              "outsideColor": "#ffffff",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/IconDesc_NitricAcid_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 7,
+              "match": {
+                "kind": "well",
+                "resource": "nitrogen-gas",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "nitrogenGasWellPure",
+              "name": "Nitrogen Gas (Pure)",
+              "outsideColor": "#ffffff",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/IconDesc_NitricAcid_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 36,
+              "match": {
+                "kind": "well",
+                "resource": "nitrogen-gas",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crude Oil",
+          "type": "Desc_LiquidOilWell_C",
+          "layers": [
+            {
+              "id": "oilWellImpure",
+              "name": "Crude Oil (Impure)",
+              "outsideColor": "#330033",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 8,
+              "match": {
+                "kind": "well",
+                "resource": "crude-oil",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "oilWellNormal",
+              "name": "Crude Oil (Normal)",
+              "outsideColor": "#330033",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 6,
+              "match": {
+                "kind": "well",
+                "resource": "crude-oil",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "oilWellPure",
+              "name": "Crude Oil (Pure)",
+              "outsideColor": "#330033",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/LiquidOil_Pipe_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 4,
+              "match": {
+                "kind": "well",
+                "resource": "crude-oil",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Water",
+          "type": "Desc_Water_C",
+          "layers": [
+            {
+              "id": "waterWellImpure",
+              "name": "Water (Impure)",
+              "outsideColor": "#7ab0d4",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/LiquidWater_Pipe_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 7,
+              "match": {
+                "kind": "well",
+                "resource": "water",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "waterWellNormal",
+              "name": "Water (Normal)",
+              "outsideColor": "#7ab0d4",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/LiquidWater_Pipe_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 12,
+              "match": {
+                "kind": "well",
+                "resource": "water",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "waterWellPure",
+              "name": "Water (Pure)",
+              "outsideColor": "#7ab0d4",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/LiquidWater_Pipe_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 36,
+              "match": {
+                "kind": "well",
+                "resource": "water",
+                "purity": "pure"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Geysers",
+          "type": "Desc_Geyser_C",
+          "layers": [
+            {
+              "id": "geyserImpure",
+              "name": "Geyser (Impure)",
+              "outsideColor": "#f8d450",
+              "insideColor": "#d23430",
+              "icon": "/assets/icons/scim/GeoThermalPowerGenerator_256.png",
+              "purity": "impure",
+              "static": false,
+              "count": 9,
+              "match": {
+                "kind": "geyser",
+                "purity": "impure"
+              }
+            },
+            {
+              "id": "geyserNormal",
+              "name": "Geyser (Normal)",
+              "outsideColor": "#f8d450",
+              "insideColor": "#f26418",
+              "icon": "/assets/icons/scim/GeoThermalPowerGenerator_256.png",
+              "purity": "normal",
+              "static": false,
+              "count": 13,
+              "match": {
+                "kind": "geyser",
+                "purity": "normal"
+              }
+            },
+            {
+              "id": "geyserPure",
+              "name": "Geyser (Pure)",
+              "outsideColor": "#f8d450",
+              "insideColor": "#80b139",
+              "icon": "/assets/icons/scim/GeoThermalPowerGenerator_256.png",
+              "purity": "pure",
+              "static": false,
+              "count": 9,
+              "match": {
+                "kind": "geyser",
+                "purity": "pure"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_slugs",
+      "name": "Power Slugs",
+      "groups": [
+        {
+          "name": "Power Slugs",
+          "type": "Desc_Crystal_C",
+          "layers": [
+            {
+              "id": "greenSlugs",
+              "name": "Blue Power Slug",
+              "outsideColor": "#95d08f",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/PowerSlugGreen_256.png",
+              "purity": null,
+              "static": false,
+              "count": 596,
+              "match": {
+                "kind": "pickup",
+                "pickup": "blue-power-slug"
+              }
+            },
+            {
+              "id": "yellowSlugs",
+              "name": "Yellow Power Slug",
+              "outsideColor": "#d8da91",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/PowerSlugYellow_256.png",
+              "purity": null,
+              "static": false,
+              "count": 389,
+              "match": {
+                "kind": "pickup",
+                "pickup": "yellow-power-slug"
+              }
+            },
+            {
+              "id": "purpleSlugs",
+              "name": "Purple Power Slug",
+              "outsideColor": "#564271",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/PowerSlugPurple_256.png",
+              "purity": null,
+              "static": false,
+              "count": 257,
+              "match": {
+                "kind": "pickup",
+                "pickup": "purple-power-slug"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "artifacts",
+      "name": "Artifacts",
+      "groups": [
+        {
+          "name": "Artifacts",
+          "type": null,
+          "layers": [
+            {
+              "id": "mercerSpheres",
+              "name": "Mercer Sphere",
+              "outsideColor": "#2e4642",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/Wat_2_256.png",
+              "purity": null,
+              "static": false,
+              "count": 298,
+              "match": {
+                "kind": "pickup",
+                "pickup": "mercer-sphere"
+              }
+            },
+            {
+              "id": "somersloops",
+              "name": "Somersloop",
+              "outsideColor": "#91292a",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/Wat_1_256.png",
+              "purity": null,
+              "static": false,
+              "count": 106,
+              "match": {
+                "kind": "pickup",
+                "pickup": "somersloop"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collectibles",
+      "name": "Collectibles",
+      "groups": [
+        {
+          "name": "Drop-Pods",
+          "type": null,
+          "layers": [
+            {
+              "id": "hardDrives",
+              "name": "Hard Drive",
+              "outsideColor": "#f8d450",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/HardDrive_256.png",
+              "purity": null,
+              "static": false,
+              "count": 118,
+              "match": {
+                "kind": "pickup",
+                "pickup": "crash-site"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consumable",
+          "type": null,
+          "layers": [
+            {
+              "id": "paleBerry",
+              "name": "Paleberry",
+              "outsideColor": "#ee784f",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/IconDesc_Berry_256.png",
+              "purity": null,
+              "static": true,
+              "count": 2162
+            },
+            {
+              "id": "berylNut",
+              "name": "Beryl Nut",
+              "outsideColor": "#b39a69",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/Nut_256_New.png",
+              "purity": null,
+              "static": true,
+              "count": 1524
+            },
+            {
+              "id": "baconAgaric",
+              "name": "Bacon Agaric",
+              "outsideColor": "#e490a3",
+              "insideColor": "#FFFFFF",
+              "icon": "/assets/icons/scim/Mushroom_256.png",
+              "purity": null,
+              "static": true,
+              "count": 1615
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "world",
+      "name": "World",
+      "groups": [
+        {
+          "name": "Spawn points",
+          "type": null,
+          "layers": [
+            {
+              "id": "spawn",
+              "name": "Spawn points",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "name": "World border",
+          "type": null,
+          "layers": [
+            {
+              "id": "worldBorder",
+              "name": "World border",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 0
+            }
+          ]
+        },
+        {
+          "name": "Caves",
+          "type": null,
+          "layers": [
+            {
+              "id": "caves",
+              "name": "Caves",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 104
+            }
+          ]
+        },
+        {
+          "name": "Roads",
+          "type": null,
+          "layers": [
+            {
+              "id": "roads",
+              "name": "Roads",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 111
+            }
+          ]
+        },
+        {
+          "name": "Spore Flowers",
+          "type": null,
+          "layers": [
+            {
+              "id": "sporeFlowers",
+              "name": "Spore Flowers",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 651
+            }
+          ]
+        },
+        {
+          "name": "Gas Pillars",
+          "type": null,
+          "layers": [
+            {
+              "id": "pillars",
+              "name": "Gas Pillars",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 831
+            }
+          ]
+        },
+        {
+          "name": "Small Rocks",
+          "type": null,
+          "layers": [
+            {
+              "id": "smallRocks",
+              "name": "Small Rocks",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 41
+            }
+          ]
+        },
+        {
+          "name": "Large Rocks",
+          "type": null,
+          "layers": [
+            {
+              "id": "largeRocks",
+              "name": "Large Rocks",
+              "outsideColor": null,
+              "insideColor": null,
+              "icon": null,
+              "purity": null,
+              "static": true,
+              "count": 72
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -16,11 +16,44 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: '🛠' },
 ] as const;
 
+/** Embedded third-party community tools (see the `/tools/*` routes). */
+const TOOL_NAV_ITEMS = [
+  { to: '/tools/sc-production', label: 'SC Production', icon: '🏗' },
+  { to: '/tools/sc-power', label: 'SC Power', icon: '🔌' },
+  { to: '/tools/satisfactory-tools', label: 'Satisfactory Tools', icon: '🧮' },
+  { to: '/tools/scim', label: 'SCIM Map', icon: '🌍' },
+] as const;
+
 interface SidebarProps {
   /** Whether the mobile drawer is open (ignored at md+ where it's always shown). */
   open: boolean;
   /** Close the mobile drawer (also fired when a nav item is tapped). */
   onClose: () => void;
+}
+
+interface SidebarLinkProps {
+  item: { to: string; label: string; icon: string };
+  onClose: () => void;
+}
+
+function SidebarLink({ item, onClose }: SidebarLinkProps) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === '/'}
+      onClick={onClose}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+          isActive
+            ? 'bg-accent/10 font-medium text-accent'
+            : 'text-slate-400 hover:bg-surface-overlay hover:text-slate-200'
+        }`
+      }
+    >
+      <span aria-hidden>{item.icon}</span>
+      {item.label}
+    </NavLink>
+  );
 }
 
 /** Primary navigation: a fixed column at md+, a slide-out drawer on mobile. */
@@ -51,21 +84,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.to === '/'}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-accent/10 font-medium text-accent'
-                      : 'text-slate-400 hover:bg-surface-overlay hover:text-slate-200'
-                  }`
-                }
-              >
-                <span aria-hidden>{item.icon}</span>
-                {item.label}
-              </NavLink>
+              <SidebarLink item={item} onClose={onClose} />
+            </li>
+          ))}
+          <li className="px-3 pb-1 pt-4 text-[10px] uppercase tracking-widest text-slate-500">
+            External Tools
+          </li>
+          {TOOL_NAV_ITEMS.map((item) => (
+            <li key={item.to}>
+              <SidebarLink item={item} onClose={onClose} />
             </li>
           ))}
         </ul>
