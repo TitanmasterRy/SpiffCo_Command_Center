@@ -6,6 +6,21 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — World Map: Ctrl-gated zoom + performance
+
+- Wheel zoom now requires holding **Ctrl** (or ⌘): a plain scroll pages past the
+  map instead of trapping the wheel, and Ctrl+scroll zooms toward the cursor in
+  the map's 0.25 steps (throttled so a trackpad pinch can't rocket across the
+  range). A brief "Hold Ctrl and scroll to zoom" hint appears on a modifier-less
+  scroll. Leaflet's native `scrollWheelZoom` is off; a small `CtrlWheelZoom`
+  handler drives it.
+- Performance: the map no longer lags with thousands of markers. The cursor
+  coordinate readout is self-contained so mouse movement re-renders only that
+  box (previously every `mousemove` rebuilt every marker). The feature and
+  static-pin layers are memoized and **viewport-culled** — only markers near the
+  visible bounds are mounted (e.g. ~20–800 in view instead of ~6,000+), the way
+  SCIM's map only draws what's on screen.
+
 ### Fixed — World Map: marker icons hidden behind the pin disc
 
 - Marker icon overlays now paint above the pin's head circle. Leaflet's

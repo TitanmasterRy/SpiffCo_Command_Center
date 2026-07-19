@@ -1,6 +1,12 @@
-import { CRS, type LeafletMouseEvent, type Path } from 'leaflet';
+import {
+  CRS,
+  type LatLngBounds,
+  type LeafletMouseEvent,
+  type Map as LeafletMap,
+  type Path,
+} from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Circle,
   CircleMarker,
@@ -12,6 +18,7 @@ import {
   Popup,
   TileLayer,
   Tooltip,
+  useMap,
   useMapEvents,
 } from 'react-leaflet';
 import { useQuery } from '@tanstack/react-query';
@@ -121,15 +128,86 @@ function AddMarkerOnClick({ onPick }: { onPick: (e: LeafletMouseEvent) => void }
   return null;
 }
 
-/** Reports the cursor's game-world coordinates (cm) as the mouse moves. */
-function CursorTracker({ onMove }: { onMove: (pos: { x: number; y: number } | null) => void }) {
+/**
+ * Gate wheel zoom behind Ctrl (or ⌘): the map only zooms while the modifier is
+ * held, so a plain scroll pages past the map instead of trapping the wheel.
+ * Zooms toward the cursor in the map's fractional `zoomDelta` steps, throttled
+ * so a fast flick or trackpad pinch can't rocket across the whole zoom range.
+ * A modifier-less scroll surfaces a hint via {@link onHint} instead.
+ *
+ * Requires the map's own `scrollWheelZoom` to be off, otherwise Leaflet would
+ * also zoom on unmodified scrolls.
+ */
+function CtrlWheelZoom({ onHint }: { onHint: () => void }) {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    let last = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) {
+        onHint();
+        return;
+      }
+      // Ctrl+wheel is the browser's page-zoom gesture; claim it for the map.
+      e.preventDefault();
+      if (e.timeStamp - last < 40) return;
+      last = e.timeStamp;
+      const step = (map.options.zoomDelta ?? 1) * (e.deltaY < 0 ? 1 : -1);
+      const at = map.containerPointToLatLng(map.mouseEventToContainerPoint(e));
+      // Instant steps: Leaflet's zoom animation silently no-ops for fractional
+      // targets in this setup, so animating here would swallow the zoom.
+      map.setZoomAround(at, map.getZoom() + step, { animate: false });
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, [map, onHint]);
+  return null;
+}
+
+/**
+ * Cursor coordinate readout. Self-contained (owns its own state and overlay)
+ * so that mouse movement re-renders only this tiny box — not the whole map,
+ * which would otherwise rebuild every marker on every pixel of movement.
+ */
+function CursorReadout() {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   useMapEvents({
     mousemove: (e) => {
       const p = fromLatLng(e.latlng.lat, e.latlng.lng);
-      onMove({ x: p.x, y: p.y });
+      setPos({ x: p.x, y: p.y });
     },
-    mouseout: () => onMove(null),
+    mouseout: () => setPos(null),
   });
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-md border border-surface-border bg-surface/85 px-2.5 py-1 font-mono text-xs text-slate-300 backdrop-blur">
+      {pos
+        ? `X ${Math.round(pos.x).toLocaleString()}  ·  Y ${Math.round(pos.y).toLocaleString()}`
+        : 'move cursor for coordinates'}
+    </div>
+  );
+}
+
+/**
+ * Reports the map's visible bounds only once it has a real size — a zero-size
+ * map (during mount, or in a headless test) yields degenerate bounds that would
+ * cull every marker.
+ */
+function reportBounds(map: LeafletMap, onBounds: (b: LatLngBounds) => void) {
+  const size = map.getSize();
+  if (size.x > 0 && size.y > 0) onBounds(map.getBounds());
+}
+
+/**
+ * Reports the map's visible bounds (on pan/zoom and once on mount) so the
+ * feature layer can cull off-screen markers — only what's near the viewport is
+ * rendered, the way SCIM's canvas map does.
+ */
+function BoundsTracker({ onBounds }: { onBounds: (b: LatLngBounds) => void }) {
+  const map = useMapEvents({
+    moveend: () => reportBounds(map, onBounds),
+    zoomend: () => reportBounds(map, onBounds),
+  });
+  useEffect(() => reportBounds(map, onBounds), [map, onBounds]);
   return null;
 }
 
@@ -251,7 +329,8 @@ export default function WorldMap() {
   );
   const [produces, setProduces] = useLocalStorage('spiffco.map.produces', 'all');
   const [region, setRegion] = useLocalStorage('spiffco.map.region', 'all');
-  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  // Visible map bounds, kept current by <BoundsTracker>, used to cull markers.
+  const [bounds, setBounds] = useState<LatLngBounds | null>(null);
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [pendingName, setPendingName] = useState('');
@@ -260,6 +339,15 @@ export default function WorldMap() {
   const [initialView] = useState(loadView);
   const [zoom, setZoom] = useState(initialView.zoom);
   const scale = iconScale(zoom);
+  // Briefly shown when the user scrolls over the map without the zoom modifier.
+  const [zoomHint, setZoomHint] = useState(false);
+  const hintTimer = useRef<number | null>(null);
+  const flashZoomHint = useCallback(() => {
+    setZoomHint(true);
+    if (hintTimer.current) window.clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setZoomHint(false), 1300);
+  }, []);
+  useEffect(() => () => void (hintTimer.current && window.clearTimeout(hintTimer.current)), []);
 
   const allFeatures = useMemo(() => world?.features ?? [], [world]);
   const regionOptions = useMemo(() => metaOptions(allFeatures, 'region'), [allFeatures]);
@@ -363,6 +451,103 @@ export default function WorldMap() {
     [activeLayers],
   );
 
+  // The feature layer is the map's heaviest piece (thousands of markers), so it
+  // is memoized and only recomputed when its real inputs change — not on cursor
+  // movement, zoom-hint flashes, or other unrelated re-renders. Off-screen
+  // features (outside the padded viewport) are culled so we never mount markers
+  // the user can't see.
+  const featureLayers = useMemo(() => {
+    const view = bounds ? bounds.pad(0.3) : null;
+    const visible = view ? features.filter((f) => view.contains(toLatLng(f.position))) : features;
+    return visible.map((f) => {
+      const stateSuffix =
+        f.collected === true
+          ? ' (collected)'
+          : f.occupied === true
+            ? ' (miner installed)'
+            : f.occupied === false
+              ? ' (free)'
+              : '';
+      const isBuilding = f.type === 'factory' || f.type === 'power_plant';
+      const model = isBuilding ? buildingModels[String(f.meta.class_name ?? '')] : undefined;
+      // Buildings get SCIM's game-styled panel; everything else keeps the plain
+      // details popup.
+      const details = isBuilding ? (
+        <Popup className="scim-popup" maxWidth={280}>
+          <BuildingPanel feature={f} model={model} />
+        </Popup>
+      ) : (
+        <Popup>
+          <strong>{f.name}</strong>
+          <br />
+          {FEATURE_LABEL[f.type].replace(/s$/, '') + stateSuffix}
+          {Object.entries(f.meta).map(([k, v]) => (
+            <div key={k}>
+              {k}: {String(v)}
+            </div>
+          ))}
+        </Popup>
+      );
+      if (isBuilding && zoom >= BUILDING_OUTLINE_MIN_ZOOM) {
+        const fillColor = model?.color ?? FEATURE_COLOR[f.type];
+        const fillOpacity = model?.opacity ?? 0.5;
+        const outline = buildingOutline(model, f.position, Number(f.meta.rotation ?? 0));
+        if (outline) {
+          return outline.map((rings, i) => (
+            <Polygon
+              key={`${f.id}-${i}`}
+              positions={rings}
+              pathOptions={{
+                color: fillColor,
+                fillColor,
+                weight: model?.weight ?? 2,
+                opacity: 0.9,
+                fillOpacity,
+              }}
+              // SCIM's hover animation: light-gray highlight on mouseover,
+              // restored on mouseout.
+              eventHandlers={{
+                mouseover: (e) => (e.target as Path).setStyle(HOVER_STYLE),
+                mouseout: (e) => (e.target as Path).setStyle({ fillColor, fillOpacity }),
+              }}
+            >
+              <Tooltip sticky>{f.name}</Tooltip>
+              {i === 0 ? details : null}
+            </Polygon>
+          ));
+        }
+      }
+      return (
+        <Marker key={f.id} position={toLatLng(f.position)} icon={featureIcon(f, scale)}>
+          <Tooltip direction="top" offset={[0, -40 * scale]}>
+            {f.name + stateSuffix}
+          </Tooltip>
+          {details}
+        </Marker>
+      );
+    });
+  }, [features, bounds, buildingModels, zoom, scale]);
+
+  // Vendored SCIM static pins (berries, nuts, hard drives, …) are the bulk of
+  // the markers, so they get the same memoize-and-cull treatment. One icon is
+  // shared per layer; keys are coordinate-based so culling can't shuffle them.
+  const staticPinLayers = useMemo(() => {
+    const view = bounds ? bounds.pad(0.3) : null;
+    return STATIC_PIN_LAYERS.map((layerId) => {
+      const layer = SCIM_LAYER_BY_ID.get(layerId);
+      const points = staticLayers[layerId];
+      if (!activeLayers[layerId] || !layer || !points) return null;
+      const icon = scimLayerIcon(layer, Math.min(scale, 0.85));
+      return points
+        .filter(([x, y, z]) => !view || view.contains(toLatLng({ x, y, z })))
+        .map(([x, y, z]) => (
+          <Marker key={`${layerId}-${x}-${y}`} position={toLatLng({ x, y, z })} icon={icon}>
+            <Popup>{layer.name}</Popup>
+          </Marker>
+        ));
+    });
+  }, [staticLayers, activeLayers, scale, bounds]);
+
   if (isLoading || !world) return <p className="text-sm text-slate-500">Loading world…</p>;
 
   return (
@@ -408,7 +593,9 @@ export default function WorldMap() {
           // Fractional zoom steps + soft pan bounds, matching SCIM's map feel.
           zoomSnap={0.25}
           zoomDelta={0.25}
-          wheelPxPerZoomLevel={90}
+          // Wheel zoom is gated behind Ctrl by <CtrlWheelZoom>; Leaflet's own
+          // handler stays off so an unmodified scroll pages past the map.
+          scrollWheelZoom={false}
           maxBounds={MAP_BOUNDS}
           maxBoundsViscosity={0.6}
           preferCanvas
@@ -437,85 +624,16 @@ export default function WorldMap() {
               setPendingName('');
             }}
           />
-          <CursorTracker onMove={setCursor} />
+          <CursorReadout />
+          <BoundsTracker onBounds={setBounds} />
           <ViewTracker onZoom={setZoom} />
+          <CtrlWheelZoom onHint={flashZoomHint} />
 
-          {/* Live world features (FRM / simulation), filtered by layer.
-              Buildings whose class has a SCIM footprint render as their real
-              rotated outline once zoomed in; everything else uses pins. */}
-          {features.map((f) => {
-            const stateSuffix =
-              f.collected === true
-                ? ' (collected)'
-                : f.occupied === true
-                  ? ' (miner installed)'
-                  : f.occupied === false
-                    ? ' (free)'
-                    : '';
-            const isBuilding = f.type === 'factory' || f.type === 'power_plant';
-            const model = isBuilding
-              ? buildingModels[String(f.meta.class_name ?? '')]
-              : undefined;
-            // Buildings get SCIM's game-styled panel; everything else keeps
-            // the plain details popup.
-            const details = isBuilding ? (
-              <Popup className="scim-popup" maxWidth={280}>
-                <BuildingPanel feature={f} model={model} />
-              </Popup>
-            ) : (
-              <Popup>
-                <strong>{f.name}</strong>
-                <br />
-                {FEATURE_LABEL[f.type].replace(/s$/, '') + stateSuffix}
-                {Object.entries(f.meta).map(([k, v]) => (
-                  <div key={k}>
-                    {k}: {String(v)}
-                  </div>
-                ))}
-              </Popup>
-            );
-            if (isBuilding && zoom >= BUILDING_OUTLINE_MIN_ZOOM) {
-              const fillColor = model?.color ?? FEATURE_COLOR[f.type];
-              const fillOpacity = model?.opacity ?? 0.5;
-              const outline = buildingOutline(
-                model,
-                f.position,
-                Number(f.meta.rotation ?? 0),
-              );
-              if (outline) {
-                return outline.map((rings, i) => (
-                  <Polygon
-                    key={`${f.id}-${i}`}
-                    positions={rings}
-                    pathOptions={{
-                      color: fillColor,
-                      fillColor,
-                      weight: model?.weight ?? 2,
-                      opacity: 0.9,
-                      fillOpacity,
-                    }}
-                    // SCIM's hover animation: light-gray highlight on
-                    // mouseover, restored on mouseout.
-                    eventHandlers={{
-                      mouseover: (e) => (e.target as Path).setStyle(HOVER_STYLE),
-                      mouseout: (e) => (e.target as Path).setStyle({ fillColor, fillOpacity }),
-                    }}
-                  >
-                    <Tooltip sticky>{f.name}</Tooltip>
-                    {i === 0 ? details : null}
-                  </Polygon>
-                ));
-              }
-            }
-            return (
-              <Marker key={f.id} position={toLatLng(f.position)} icon={featureIcon(f, scale)}>
-                <Tooltip direction="top" offset={[0, -40 * scale]}>
-                  {f.name + stateSuffix}
-                </Tooltip>
-                {details}
-              </Marker>
-            );
-          })}
+          {/* Live world features (FRM / simulation), filtered by layer and
+              culled to the viewport. Buildings whose class has a SCIM footprint
+              render as their real rotated outline once zoomed in; everything
+              else uses pins. Memoized in `featureLayers` above. */}
+          {featureLayers}
 
           {/* Power lines (blue, as on SCIM) and pipelines. */}
           {activeLayers['live:cables'] &&
@@ -558,18 +676,9 @@ export default function WorldMap() {
               </Polyline>
             ))}
 
-          {/* Vendored SCIM static layers (no FRM endpoint exists for these). */}
-          {STATIC_PIN_LAYERS.map((layerId) => {
-            const layer = SCIM_LAYER_BY_ID.get(layerId);
-            const points = staticLayers[layerId];
-            if (!activeLayers[layerId] || !layer || !points) return null;
-            const icon = scimLayerIcon(layer, Math.min(scale, 0.85));
-            return points.map(([x, y, z], i) => (
-              <Marker key={`${layerId}-${i}`} position={toLatLng({ x, y, z })} icon={icon}>
-                <Popup>{layer.name}</Popup>
-              </Marker>
-            ));
-          })}
+          {/* Vendored SCIM static layers (no FRM endpoint exists for these).
+              Memoized + viewport-culled in `staticPinLayers` above. */}
+          {staticPinLayers}
           {Object.entries(STATIC_CIRCLE_STYLE).map(([layerId, style]) => {
             const points = staticLayers[layerId as 'sporeFlowers'];
             if (!activeLayers[layerId] || !points) return null;
@@ -674,10 +783,13 @@ export default function WorldMap() {
             </CircleMarker>
           ))}
         </MapContainer>
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] rounded-md border border-surface-border bg-surface/85 px-2.5 py-1 font-mono text-xs text-slate-300 backdrop-blur">
-          {cursor
-            ? `X ${Math.round(cursor.x).toLocaleString()}  ·  Y ${Math.round(cursor.y).toLocaleString()}`
-            : 'move cursor for coordinates'}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-3 z-[1000] flex justify-center transition-opacity duration-200"
+          style={{ opacity: zoomHint ? 1 : 0 }}
+        >
+          <span className="rounded-full border border-surface-border bg-surface/85 px-3 py-1 text-xs font-medium text-slate-200 backdrop-blur">
+            Hold Ctrl and scroll to zoom
+          </span>
         </div>
       </Card>
 
