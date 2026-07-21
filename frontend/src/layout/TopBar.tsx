@@ -1,5 +1,6 @@
 import { StatusBadge, type StatusKind } from '../components/StatusBadge';
 import { useAppInfo, useHealth } from '../hooks/useHealth';
+import { useAuth, useLogout } from '../hooks/useAuth';
 import { useOfflineStatus } from '../hooks/useOffline';
 import { useConnectionStore } from '../stores/connectionStore';
 import type { DataSource } from '../types/offline';
@@ -49,9 +50,33 @@ export function TopBar({ onMenu }: { onMenu: () => void }) {
           <StatusBadge kind={source.kind} label={source.label} />
         </div>
       </div>
-      <div className="hidden shrink-0 text-xs text-slate-500 sm:block">
-        {info ? `v${info.version} · ${info.environment}` : '…'}
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="hidden text-xs text-slate-500 sm:block">
+          {info ? `v${info.version} · ${info.environment}` : '…'}
+        </span>
+        <UserMenu />
       </div>
     </header>
+  );
+}
+
+/** Current user + sign-out, shown only when authentication is enabled. */
+function UserMenu() {
+  const { enabled, username } = useAuth();
+  const logout = useLogout();
+  if (!enabled || !username) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden text-xs text-slate-400 sm:inline">
+        <span className="text-slate-200">{username}</span>
+      </span>
+      <button
+        type="button"
+        onClick={logout}
+        className="rounded-md border border-surface-border px-2.5 py-1 text-xs text-slate-300 hover:bg-surface-overlay"
+      >
+        Sign out
+      </button>
+    </div>
   );
 }

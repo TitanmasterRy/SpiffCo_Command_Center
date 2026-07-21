@@ -215,6 +215,49 @@ plus `top_production` (busiest items by average rate). Aggregates the most recen
 (severity → count). Findings come from rule-based analysis of the live game-state
 and logistics snapshots (power, machines, production, storage, logistics).
 
+## Endpoints (Phase 13 — Admin Panel)
+
+All admin endpoints except `login` require `Authorization: Bearer <token>`;
+a missing/invalid/expired token → `401 unauthorized`.
+
+### `POST /api/v1/admin/login`
+
+Body `{username, password}` → `SessionInfo` `{token, username, expires_at}`.
+Credentials come from `SPIFFCO_ADMIN_USERNAME` plus `SPIFFCO_ADMIN_PASSWORD`
+or `SPIFFCO_ADMIN_PASSWORD_HASH` (PBKDF2 via
+`app.services.admin_auth.hash_password`; the hash wins). 401 with a setup
+message when no password is configured (no default credential).
+
+### `GET /api/v1/admin/session`
+
+Validates the presented token and returns its `SessionInfo`.
+
+### `GET /api/v1/admin/catalog`
+
+`CheatCatalog`: `categories` (→ `sections` → `actions` with typed `params` the
+UI renders generically) plus `executor` (`command_endpoint` | `simulated`) and
+an `executor_hint`. Each action carries `scope` (`"player"` → the UI adds an
+online-player selector whose choice is sent as `params.player`; `"world"` →
+acts on shared state) and `affects_all` (badge: alters every player's stuff).
+Actions execute in-game only when `SPIFFCO_ADMIN_COMMAND_URL` points at a
+game-side command bridge.
+
+### `POST /api/v1/admin/execute`
+
+Body `{action_id, params}` → `CheatExecuteResult` `{action_id, status, detail,
+toggles, response}`. Toggles flip server-side state; unknown action → 404,
+missing required params → 422, unreachable command endpoint → 503.
+Every execution is published on WS/bus topic `admin.cheat`.
+
+### `GET /api/v1/admin/state` · `GET /api/v1/admin/log`
+
+Current toggle states; the audit log (newest first, last 200 commands).
+
+### `GET/PUT /api/v1/admin/presets/{kind}`
+
+Saved preset lists (e.g. `teleports`, `inventories`) persisted in
+`app_settings`. PUT body `{kind, items: [<json>]}` — the path kind wins.
+
 ## WebSocket `/ws`
 
 Client → server:

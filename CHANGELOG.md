@@ -6,6 +6,109 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — World Map: pin ring colored by the building's paint swatch
+
+- Miners and oil/water/well extractors now appear on the map (from FRM's
+  `getExtractor` feed, previously unfetched) as building markers. Each painted
+  building's pin **ring, anchor line, and position dot are colored to its in-game
+  paint swatch** (its primary customization color), so a color-coded factory
+  reads the same on the map.
+- Backend: `normalize.py` reads the swatch from the building payload
+  (`ColorSlot.PrimaryColor` / `PrimaryColor` / `Color`, accepting hex strings,
+  `{R,G,B}` objects of 0–1 floats or 0–255 ints, and `[r,g,b]` lists) into
+  `meta.color`; unpainted buildings omit it and fall back to the per-type color.
+  The simulated provider paints a few sample factories/extractors so the feature
+  is visible without a live game.
+- Frontend: `swatchColor()` in `utils/mapIcons.ts` validates `meta.color` and,
+  when present, uses it for the pin's outside (ring) color.
+
+### Added — User accounts: login, account approval, and per-user permissions
+
+- **Login for the whole site.** New `users` table with account status
+  (`pending` / `active` / `disabled`), a role label, and an explicit permission
+  list. Auth is opt-in via `SPIFFCO_AUTH_ENABLED` (default off, preserving the
+  single-user LAN experience); when on, every `/api/v1` data endpoint requires a
+  valid session and the WebSocket stream requires a `?token=` handshake.
+- **Self-service sign-up → admin approval.** `POST /auth/register` creates a
+  pending account; it cannot log in until an admin approves it. `POST /auth/login`
+  issues a stateless HMAC session token (same scheme as the admin panel, no new
+  deps); `GET /auth/me` restores a session. Public sign-up can be disabled with
+  `SPIFFCO_AUTH_ALLOW_REGISTRATION=false`.
+- **Per-user permissions.** A permission catalog gates each page (`view:*`) plus
+  privileged actions (`use:admin-cheats`, `manage:users`); role presets
+  (viewer / operator / admin) seed the checkboxes, which the admin can then
+  customize per account. Backend enforces action permissions; the frontend nav
+  and routes gate page visibility.
+- **Admin → Accounts tab.** The admin page now has *Cheats* and *Accounts* tabs.
+  Accounts lists pending requests (Approve / Reject) and existing users with a
+  role selector, permission checkboxes, enable/disable, and delete. Endpoints
+  live under `/api/v1/admin/users` (require `manage:users`).
+- **Owner account** is seeded/refreshed from `SPIFFCO_ADMIN_PASSWORD`
+  (or `_HASH`) on startup — always active with full access, and protected from
+  disabling or deletion — so there is always an approver. The former
+  `/admin/login` endpoint is replaced by the unified `/auth/*` flow; the cheat
+  panel now requires the `use:admin-cheats` permission.
+- Frontend: `authStore` (localStorage-backed session), a login/request-account
+  screen, `RequireAuth` / `RequirePermission` route guards, a permission-filtered
+  sidebar, and a top-bar user menu with sign-out.
+
+### Added — Admin Panel: player targeting, shared-state flags, achievement safety
+
+- Catalog actions now carry `scope` and `affects_all`. Player-scoped cheats
+  (inventory, equipment, movement, per-player visual overlays, build-gun rule
+  toggles) get a "Target player" selector in the panel, fed by the live
+  online-player list from the world snapshot; the choice is sent as
+  `params.player` and audit-logged. The bridge resolves the name
+  case-insensitively and fails (never retargets) if that player is offline;
+  empty = first connected player.
+- Cheats that alter session-shared state (unlocks, mass build/delete, power,
+  logistics, trains, drones, world, creatures, radiation, painting) are badged
+  **All players** in the UI.
+- Achievement safety: the bridge only uses cheat-manager/engine calls and never
+  enables Advanced Game Settings / creative (which permanently disables
+  achievements). AGS-only actions (`build.free_placement`, `build.no_collision`,
+  `build.no_clearance`) are hard-refused with an explanatory message; the
+  policy is documented in the bridge README and noted in the panel UI.
+
+### Added — SpiffCoBridge companion mod (scaffold) + authenticated dispatch
+
+- `bridge-mod/SpiffCoBridge/`: an SML (Satisfactory Mod Loader) UE plugin that
+  runs an authenticated HTTP server in-game (`GET /health`, `POST /execute`)
+  and executes admin-panel actions via a command registry keyed by the same
+  action ids as the backend catalog. Wave 1 implements fly / noclip / god mode,
+  item spawning (class-name, display-name, or asset-path resolution), clear
+  inventory, unlock all recipes / MAM, teleport, time-of-day + freeze /
+  multiplier, and kill-all-creatures; everything else returns 501 so the panel
+  reports it honestly. Server-authority only (never listens on clients);
+  config via `[/Script/SpiffCoBridge.SpiffCoBridgeSettings]` in `Game.ini`
+  (`bEnabled`, `Port` default 8091, `AuthToken`). Compiles inside the SML
+  project (see its README); `ADJUST-ME` markers flag the FactoryGame call
+  sites most likely to need signature touch-ups per game update.
+- Backend: `SPIFFCO_ADMIN_COMMAND_TOKEN` — the command executor now sends a
+  shared secret as `X-SpiffCo-Token`, matching the bridge's `AuthToken`.
+- `scripts/mock_bridge.py`: stdlib mock implementing the bridge contract so the
+  real-dispatch path can be tested without the game (`--port`, `--token`).
+
+### Added — Admin Panel (Phase 13)
+
+- Password-protected admin panel at `/admin` with a full cheat catalog: player
+  (inventory / equipment / movement), building (placement / mass building /
+  delete tools), power, logistics, trains, drones, world, creatures, radiation,
+  factory analysis highlights, building inspector, and appearance — ~170 actions
+  rendered generically from a data-driven catalog (`backend/app/admin/catalog.py`).
+- Auth: `POST /api/v1/admin/login` exchanges the configured credentials
+  (`SPIFFCO_ADMIN_USERNAME` + `SPIFFCO_ADMIN_PASSWORD` or
+  `SPIFFCO_ADMIN_PASSWORD_HASH`, PBKDF2) for a stateless HMAC-signed session
+  token; every other `/api/v1/admin/*` endpoint requires it. Login fails closed
+  when no password is configured — there is no default credential.
+- Dispatch is pluggable (`SPIFFCO_ADMIN_COMMAND_URL`): with a game-side command
+  endpoint configured (companion mod / server bridge, `POST /execute`), actions
+  execute for real; without one they are acknowledged locally as `simulated`.
+  FRM is read-only telemetry and cannot execute commands.
+- Server-tracked toggle state, an audit log of every command (`GET
+  /api/v1/admin/log`), `admin.cheat` events on the bus, and saved presets
+  (teleport locations, inventory presets) persisted via `app_settings`.
+
 ### Changed — World Map: Ctrl-gated zoom + performance
 
 - Wheel zoom now requires holding **Ctrl** (or ⌘): a plain scroll pages past the

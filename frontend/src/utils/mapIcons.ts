@@ -94,6 +94,18 @@ export function featureColor(feature: MapFeature): string {
   return FEATURE_COLOR[feature.type];
 }
 
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * The building's in-game paint-swatch color (`meta.color`), or null. Set by the
+ * backend for miners, extractors, and other painted buildings; when present it
+ * overrides the default per-type ring color so the pin matches the swatch.
+ */
+export function swatchColor(feature: MapFeature): string | null {
+  const color = feature.meta.color;
+  return typeof color === 'string' && HEX_COLOR.test(color) ? color : null;
+}
+
 /** Path to a feature's local game icon, or null when none has been downloaded. */
 function localIconUrl(feature: MapFeature): string | null {
   if (PICKUP_TYPES.has(feature.type)) {
@@ -175,11 +187,13 @@ function pinIcon(spec: PinSpec, scale: number): DivIcon {
 export function featureIcon(feature: MapFeature, scale = 1): DivIcon {
   const dim = feature.collected === true || feature.occupied === true;
   const opacity = dim ? COLLECTED_OPACITY : 1;
+  // A painted building's swatch color wins for the pin ring / anchor when set.
+  const swatch = swatchColor(feature);
   const layer = featureScimLayer(feature);
   if (layer?.outsideColor && layer.insideColor) {
     return pinIcon(
       {
-        outsideColor: layer.outsideColor,
+        outsideColor: swatch ?? layer.outsideColor,
         insideColor: layer.insideColor,
         iconUrl: layer.icon ?? localIconUrl(feature),
         glyph: GLYPH[feature.type],
@@ -188,12 +202,11 @@ export function featureIcon(feature: MapFeature, scale = 1): DivIcon {
       scale,
     );
   }
+  const nodeLike = NODE_LIKE_TYPES.has(feature.type);
   return pinIcon(
     {
-      outsideColor: NODE_LIKE_TYPES.has(feature.type)
-        ? featureColor(feature)
-        : FEATURE_COLOR[feature.type],
-      insideColor: NODE_LIKE_TYPES.has(feature.type) ? featureColor(feature) : '#ffffff',
+      outsideColor: swatch ?? (nodeLike ? featureColor(feature) : FEATURE_COLOR[feature.type]),
+      insideColor: nodeLike ? featureColor(feature) : '#ffffff',
       iconUrl: localIconUrl(feature),
       glyph: GLYPH[feature.type],
       opacity,

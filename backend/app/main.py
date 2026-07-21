@@ -32,6 +32,9 @@ from app.database.engine import get_session_factory, init_database, shutdown_dat
 from app.errors import NotFoundError, UpstreamUnavailableError, register_exception_handlers
 from app.logistics.service import LogisticsProvider, LogisticsService
 from app.offline import OfflineManager
+from app.services.admin_auth import hash_password
+from app.services.admin_cheats import AdminCheatService
+from app.services.auth import AuthService
 from app.services.event_bus import EventBus
 from app.services.frm_config import FrmConfigService, load_persisted_config
 from app.services.game_state import GameStateProvider, GameStateService
@@ -165,6 +168,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         on_connector_change=_set_frm,
     )
 
+    # User authentication (login + account approval + per-user permissions).
+    # Seed/refresh the owner account from the env credentials so the site always
+    # has one admin who can approve the first sign-ups.
+    auth = AuthService(settings)
+    app.state.auth = auth
+    owner_hash = settings.admin_password_hash or (
+        hash_password(settings.admin_password) if settings.admin_password else ""
+    )
+    if owner_hash:
+        async with get_session_factory()() as boot_session:
+            await auth.ensure_superuser(boot_session, settings.admin_username, owner_hash)
+    elif settings.auth_enabled:
+        logger.warning(
+            "Auth enabled but no SPIFFCO_ADMIN_PASSWORD set — no owner account "
+            "exists to approve sign-ups."
+        )
+
+    # Admin panel (Phase 13): cheat dispatch. Toggle state is process-local;
+    # presets persist via app_settings.
+    admin_cheats = AdminCheatService(settings, bus)
+    app.state.admin_cheats = admin_cheats
+
     scheduler = Scheduler()
     _register_jobs(scheduler, bus, game_state, world, logistics)
     app.state.scheduler = scheduler
@@ -182,6 +207,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         current_frm: FrmConnector | None = getattr(app.state, "frm", None)
         if current_frm is not None:
             await current_frm.stop()
+        await admin_cheats.aclose()
         await shutdown_database()
         logger.info("Shutdown complete")
 

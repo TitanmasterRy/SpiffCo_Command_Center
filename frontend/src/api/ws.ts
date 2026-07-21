@@ -11,6 +11,8 @@ export interface WsClientOptions {
   onStatusChange?: (status: WsStatus) => void;
   /** Base reconnect delay in ms (doubles up to 30s). Default 1000. */
   reconnectDelayMs?: number;
+  /** Session token, sent as a `?token=` query param when auth is enabled. */
+  token?: string | null;
 }
 
 /**
@@ -28,9 +30,12 @@ export class WsClient {
   /** Open the connection (no-op if already connecting/open). */
   connect(): void {
     if (this.socket || this.closedByUser) return;
-    const url =
+    const base =
       this.options.url ??
       `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
+    const url = this.options.token
+      ? `${base}?token=${encodeURIComponent(this.options.token)}`
+      : base;
 
     this.options.onStatusChange?.('connecting');
     const socket = new WebSocket(url);

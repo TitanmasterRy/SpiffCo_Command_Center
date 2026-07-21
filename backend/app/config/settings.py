@@ -70,9 +70,36 @@ class Settings(BaseSettings):
     # background DB writes never race request handlers on the shared connection.
     scheduler_enabled: bool = True
 
-    # Optional authentication
+    # User authentication (login + account approval + per-user permissions).
+    # When enabled, all data endpoints require a valid session and the frontend
+    # gates pages by permission. Disabled by default so a solo LAN setup runs
+    # without login. auth_allow_registration exposes the public sign-up form.
     auth_enabled: bool = False
+    auth_allow_registration: bool = True
+    auth_session_ttl_minutes: int = 720
+    # HMAC secret for user session tokens; falls back to admin_session_secret,
+    # then to a per-process random value (sessions reset on restart).
+    auth_session_secret: str = ""
+    # Legacy single-token auth (unused by the current app).
     auth_token: str = ""
+
+    # Admin panel (Phase 13). Login is disabled until a password (or hash) is
+    # set — the panel fails closed instead of shipping a default credential.
+    # admin_password_hash (pbkdf2, from app.services.admin_auth.hash_password)
+    # wins over the plaintext admin_password when both are set.
+    admin_username: str = "admin"
+    admin_password: str = ""
+    admin_password_hash: str = ""
+    # HMAC secret for session tokens; random per process when empty (sessions
+    # then reset on restart).
+    admin_session_secret: str = ""
+    admin_session_ttl_minutes: int = 480
+    # Game-side command endpoint (the SpiffCoBridge companion mod). When empty,
+    # cheat actions are simulated locally — FRM telemetry cannot execute them.
+    # The token is sent as ``X-SpiffCo-Token`` and must match the bridge's
+    # configured AuthToken (both empty = no auth, LAN-trusted setups only).
+    admin_command_url: str = ""
+    admin_command_token: str = ""
 
     @field_validator("cors_origins", mode="before")
     @classmethod

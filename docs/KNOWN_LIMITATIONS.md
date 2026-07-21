@@ -12,7 +12,8 @@ Current, deliberate limitations — each has a planned resolution.
 | Offline power figures are estimates | A static save has no live production/consumption; values use nominal building power at 100% clock | Refine with recipe/clock data from the save when property parsing lands |
 | Offline mode leaves the World Map / Logistics pages empty | Positions aren't extracted from saves | Same per-actor transform parsing above |
 | Frontend bundle >830 kB (Recharts/Leaflet) | Single chunk for simplicity | Code-split chart/map pages |
-| Auth settings exist but are not enforced | No remote-exposure features yet; localhost assumed | Auth middleware before documenting remote access |
+| Global API auth settings (`auth_enabled`/`auth_token`) are not enforced | No remote-exposure features yet; localhost assumed. The admin panel (`/api/v1/admin/*`) has its own mandatory login | Auth middleware for the rest of the API before documenting remote access |
+| Admin cheats run as `simulated` unless `SPIFFCO_ADMIN_COMMAND_URL` is set | FRM is read-only telemetry — executing in-game commands needs the SpiffCoBridge companion mod (`bridge-mod/SpiffCoBridge`, scaffolded, compiles in the SML toolchain; wave 1 covers ~17 actions, rest 501) | Build/package the bridge via SML + Alpakit, install on the game host, set `SPIFFCO_ADMIN_COMMAND_URL`/`_TOKEN`; grow wave-2 handlers. Test without the game via `scripts/mock_bridge.py` |
 | Game data files are seed subsets | Hand-curated for planner development | `scripts/import_game_data.py` from game `Docs.json` |
 | Frontend types mirrored by hand | Contract is tiny | Generate from OpenAPI before the contract grows |
 | Single-process only (in-process bus, asyncio scheduler) | Self-hosted simplicity | Interfaces allow Redis-backed bus if ever needed |

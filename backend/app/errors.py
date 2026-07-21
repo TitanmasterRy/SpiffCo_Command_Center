@@ -68,6 +68,13 @@ class UnauthorizedError(AppError):
     code = "unauthorized"
 
 
+class ForbiddenError(AppError):
+    """The caller is authenticated but lacks permission for this action."""
+
+    status_code = 403
+    code = "forbidden"
+
+
 def _error_response(
     status_code: int, code: str, message: str, details: dict[str, Any]
 ) -> JSONResponse:

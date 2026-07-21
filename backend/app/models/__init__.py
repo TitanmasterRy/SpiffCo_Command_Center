@@ -10,6 +10,7 @@ from app.models.blueprint import Blueprint
 from app.models.history import PowerSample, ProductionSample
 from app.models.map_marker import MapMarker
 from app.models.plan import FactoryPlan, PlanVersion
+from app.models.user import User
 
 __all__ = [
     "Base",
@@ -20,4 +21,5 @@ __all__ = [
     "FactoryPlan",
     "PlanVersion",
     "Blueprint",
+    "User",
 ]

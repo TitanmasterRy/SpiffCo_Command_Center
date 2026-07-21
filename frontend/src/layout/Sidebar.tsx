@@ -1,20 +1,31 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: '▦' },
-  { to: '/map', label: 'World Map', icon: '🗺' },
-  { to: '/factories', label: 'Factories', icon: '🏭' },
-  { to: '/factory-planner', label: 'Factory Planner', icon: '🧱' },
-  { to: '/planner', label: 'Production Planner', icon: '⚙' },
-  { to: '/power', label: 'Power', icon: '⚡' },
-  { to: '/resources', label: 'Resources', icon: '⛏' },
-  { to: '/trains', label: 'Logistics', icon: '🚆' },
-  { to: '/blueprints', label: 'Blueprints', icon: '📐' },
-  { to: '/analytics', label: 'Analytics', icon: '📈' },
-  { to: '/advisor', label: 'Advisor', icon: '🧠' },
-  { to: '/offline', label: 'Offline Mode', icon: '💾' },
-  { to: '/settings', label: 'Settings', icon: '🛠' },
-] as const;
+interface NavItem {
+  to: string;
+  label: string;
+  icon: string;
+  /** Permission key(s) required to see this item; visible if the user holds any. */
+  perms?: string[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { to: '/', label: 'Dashboard', icon: '▦', perms: ['view:dashboard'] },
+  { to: '/map', label: 'World Map', icon: '🗺', perms: ['view:map'] },
+  { to: '/factories', label: 'Factories', icon: '🏭', perms: ['view:factories'] },
+  { to: '/factory-planner', label: 'Factory Planner', icon: '🧱', perms: ['view:factory-planner'] },
+  { to: '/planner', label: 'Production Planner', icon: '⚙', perms: ['view:planner'] },
+  { to: '/power', label: 'Power', icon: '⚡', perms: ['view:power'] },
+  { to: '/resources', label: 'Resources', icon: '⛏', perms: ['view:resources'] },
+  { to: '/trains', label: 'Logistics', icon: '🚆', perms: ['view:logistics'] },
+  { to: '/blueprints', label: 'Blueprints', icon: '📐', perms: ['view:blueprints'] },
+  { to: '/analytics', label: 'Analytics', icon: '📈', perms: ['view:analytics'] },
+  { to: '/advisor', label: 'Advisor', icon: '🧠', perms: ['view:advisor'] },
+  { to: '/offline', label: 'Offline Mode', icon: '💾', perms: ['view:offline'] },
+  // Admin: visible to anyone who can run cheats or manage accounts.
+  { to: '/admin', label: 'Admin', icon: '🛡', perms: ['use:admin-cheats', 'manage:users'] },
+  { to: '/settings', label: 'Settings', icon: '🛠', perms: ['view:settings'] },
+];
 
 /** Embedded third-party community tools (see the `/tools/*` routes). */
 const TOOL_NAV_ITEMS = [
@@ -34,6 +45,11 @@ interface SidebarProps {
 interface SidebarLinkProps {
   item: { to: string; label: string; icon: string };
   onClose: () => void;
+}
+
+/** True if the user may see *item* (no perms = always visible). */
+function canSee(item: NavItem, has: (key: string) => boolean): boolean {
+  return !item.perms || item.perms.some(has);
 }
 
 function SidebarLink({ item, onClose }: SidebarLinkProps) {
@@ -58,6 +74,8 @@ function SidebarLink({ item, onClose }: SidebarLinkProps) {
 
 /** Primary navigation: a fixed column at md+, a slide-out drawer on mobile. */
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { hasPermission } = useAuth();
+  const visibleItems = NAV_ITEMS.filter((item) => canSee(item, hasPermission));
   return (
     <>
       {open && (
@@ -82,7 +100,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         </div>
         <ul className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.to}>
               <SidebarLink item={item} onClose={onClose} />
             </li>

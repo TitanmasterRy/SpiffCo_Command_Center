@@ -13,7 +13,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.schemas.world import MapFeature, PlayerInfo, Position, WorldSnapshot
+from app.schemas.world import FeatureType, MapFeature, PlayerInfo, Position, WorldSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +24,24 @@ _COLLECTIBLES_FILE = _DATA_DIR / "collectibles.json"
 # Simulated save state: nodes with an extractor installed.
 _OCCUPIED_NODES = {"iron-grassfields-01", "limestone-rockydesert-01"}
 
-_STATIC_FEATURES: list[tuple[str, str, str, float, float]] = [
-    # (id, type, name, x, y)
-    ("iron-works", "factory", "Iron Works", -70000, 149000),
-    ("copper-basin", "factory", "Copper Basin", -61000, 141500),
-    ("concrete-plant", "factory", "Concrete Plant", -21000, 123000),
-    ("oil-outpost", "factory", "Oil Outpost", 152000, -38000),
-    ("coal-plant-north", "power_plant", "Coal Plant North", 9500, -93000),
-    ("bio-burners-hub", "power_plant", "Biomass Hub", -66000, 146000),
-    ("central-station", "train_station", "Central Station", -40000, 90000),
-    ("northern-freight", "train_station", "Northern Freight", 5000, -88000),
-    ("drone-port-hq", "drone_port", "HQ Drone Port", -68000, 147500),
-    ("truck-stop-desert", "truck_station", "Desert Truck Stop", -18000, 118000),
+_STATIC_FEATURES: list[tuple[str, FeatureType, str, float, float, str | None]] = [
+    # (id, type, name, x, y, swatch) — swatch is the building's paint-swatch color
+    # (hex) shown as the map pin's ring; None uses the default per-type color.
+    ("iron-works", "factory", "Iron Works", -70000, 149000, "#1e88e5"),
+    ("copper-basin", "factory", "Copper Basin", -61000, 141500, "#ff8f00"),
+    ("concrete-plant", "factory", "Concrete Plant", -21000, 123000, None),
+    ("oil-outpost", "factory", "Oil Outpost", 152000, -38000, "#6a1b9a"),
+    # Extractors sit on resource nodes; their painted swatch colors the ring.
+    ("iron-miner-01", "factory", "Miner Mk.2", -71000, 150500, "#e53935"),
+    ("iron-miner-02", "factory", "Miner Mk.2", -68500, 143000, "#43a047"),
+    ("oil-extractor-01", "factory", "Oil Extractor", 153500, -39500, "#3949ab"),
+    ("water-extractor-01", "factory", "Water Extractor", -30000, 128000, "#00acc1"),
+    ("coal-plant-north", "power_plant", "Coal Plant North", 9500, -93000, None),
+    ("bio-burners-hub", "power_plant", "Biomass Hub", -66000, 146000, None),
+    ("central-station", "train_station", "Central Station", -40000, 90000, None),
+    ("northern-freight", "train_station", "Northern Freight", 5000, -88000, None),
+    ("drone-port-hq", "drone_port", "HQ Drone Port", -68000, 147500, None),
+    ("truck-stop-desert", "truck_station", "Desert Truck Stop", -18000, 118000, None),
 ]
 
 
@@ -90,8 +96,14 @@ class SimulatedWorldProvider:
         self._rng = random.Random(seed)
         self._features = (
             [
-                MapFeature(id=fid, type=ftype, name=name, position=Position(x=x, y=y))  # type: ignore[arg-type]
-                for fid, ftype, name, x, y in _STATIC_FEATURES
+                MapFeature(
+                    id=fid,
+                    type=ftype,
+                    name=name,
+                    position=Position(x=x, y=y),
+                    meta={"color": color} if color else {},
+                )
+                for fid, ftype, name, x, y, color in _STATIC_FEATURES
             ]
             + _load_resource_nodes()
             + _load_collectibles(self._rng)

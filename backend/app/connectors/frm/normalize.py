@@ -206,13 +206,29 @@ _NODE_TYPE_MAP = {
 # FRM returns geysers and resource-well satellites in the generic resource-node
 # feed; reclassify them so the map's Geyser / Resource-well layers work. Geysers
 # feed geothermal generators; nitrogen gas and water are only obtained from
-# Resource Well Pressurizers, so those satellites are wells (crude oil keeps its
-# surface nodes, so it stays a resource_node).
+# Resource Well Pressurizers, so those satellites are always wells. Crude oil
+# exists as both surface nodes and well satellites, so it can't be classified by
+# resource name — _node_feature_type checks the payload's fracking markers first.
 _NODE_FEATURE_TYPE: dict[str, FeatureType] = {
     "geyser": "geyser",
     "nitrogen-gas": "resource_well",
     "water": "resource_well",
 }
+
+
+def _node_feature_type(node: Raw, resource: str) -> FeatureType:
+    """Classify a raw FRM resource-node entry into a map feature type.
+
+    FRM tags well satellites/cores via ``NodeType`` (e.g. ``"Fracking
+    Satellite"``) and/or a fracking ``ClassName``; those win over the
+    name-based fallback so oil wells don't collapse into oil surface nodes.
+    """
+    marker = f"{node.get('NodeType') or ''} {node.get('ClassName') or ''}".lower()
+    if "fracking" in marker:
+        return "resource_well"
+    if "geyser" in marker:
+        return "geyser"
+    return _NODE_FEATURE_TYPE.get(resource, "resource_node")
 
 
 def _pickup_features(
@@ -285,6 +301,60 @@ def normalize_belts(belts_raw: Iterable[Raw]) -> list[BeltPath]:
     return belts
 
 
+def _channel(value: Any) -> int:
+    """Coerce one color channel to 0–255. Accepts 0–1 floats or 0–255 numbers."""
+    f = _num(value)
+    if 0.0 < f <= 1.0:
+        f *= 255.0
+    return max(0, min(255, round(f)))
+
+
+def _color_to_hex(value: Any) -> str | None:
+    """Normalize an FRM color value into ``#rrggbb``, or None if unrecognized.
+
+    FRM paint data appears in several shapes across versions/mods: a hex string
+    (``"#RRGGBB"`` / ``"RRGGBBAA"``), an ``{R,G,B}`` object of 0–1 floats or
+    0–255 ints, or an ``[r, g, b]`` list. Anything else degrades to None.
+    """
+    if isinstance(value, str):
+        s = value.strip().lstrip("#")
+        if len(s) in (6, 8) and all(c in "0123456789abcdefABCDEF" for c in s):
+            return f"#{s[:6].lower()}"
+        return None
+    if isinstance(value, dict):
+        r, g, b = (value.get("R", value.get("r")),
+                   value.get("G", value.get("g")),
+                   value.get("B", value.get("b")))
+        if r is None or g is None or b is None:
+            return None
+        return f"#{_channel(r):02x}{_channel(g):02x}{_channel(b):02x}"
+    if isinstance(value, (list, tuple)) and len(value) >= 3:
+        return f"#{_channel(value[0]):02x}{_channel(value[1]):02x}{_channel(value[2]):02x}"
+    return None
+
+
+def _swatch_hex(b: Raw) -> str | None:
+    """Primary paint-swatch color of a building as ``#rrggbb``, or None.
+
+    Reads the customization color the player painted the building with, checking
+    the field names FRM exposes it under (a ``ColorSlot`` object, or a top-level
+    ``PrimaryColor`` / ``Color``). The primary color drives the map pin's ring.
+    """
+    slot = b.get("ColorSlot") or b.get("colorSlot")
+    candidates: list[Any] = []
+    if isinstance(slot, dict):
+        candidates += [slot.get("PrimaryColor"), slot.get("primaryColor"),
+                       slot.get("Primary"), slot.get("primary")]
+    candidates += [b.get("PrimaryColor"), b.get("primaryColor"),
+                   b.get("Color"), b.get("color")]
+    for candidate in candidates:
+        if candidate is not None:
+            hex_color = _color_to_hex(candidate)
+            if hex_color:
+                return hex_color
+    return None
+
+
 def _building_status(b: Raw) -> str:
     """Stable per-building status: operational / caution (idle) / error.
 
@@ -300,53 +370,69 @@ def _building_status(b: Raw) -> str:
     return "caution"
 
 
-def _building_features(
-    factory_raw: Iterable[Raw], generators_raw: Iterable[Raw]
-) -> list[MapFeature]:
-    """Production buildings (``factory``) and generators (``power_plant``).
-
-    Every building is its own map feature — the id must be unique per building
-    (FRM ``ID`` when present, else the enumeration index) so same-class
-    buildings don't collide into one marker.
-    """
-    features: list[MapFeature] = []
-    typed: list[tuple[FeatureType, Iterable[Raw]]] = [
-        ("factory", factory_raw),
-        ("power_plant", generators_raw),
+def _building_meta(b: Raw, name: str) -> dict[str, str | float | int]:
+    """Assemble the ``meta`` dict for one building feature."""
+    meta: dict[str, str | float | int] = {"kind": _slug(name)}
+    # Class + yaw let the frontend draw the building's real footprint outline
+    # (SCIM detailed models are keyed by short UE class name).
+    class_name = str(b.get("ClassName") or "")
+    if class_name:
+        meta["class_name"] = class_name
+    loc = b.get("location") or b.get("Location") or {}
+    if isinstance(loc, dict) and loc.get("rotation") is not None:
+        meta["rotation"] = _num(loc.get("rotation"))
+    meta["status"] = _building_status(b)
+    # Paint-swatch color drives the map pin's ring (see utils/mapIcons.ts).
+    swatch = _swatch_hex(b)
+    if swatch:
+        meta["color"] = swatch
+    power_info = b.get("PowerInfo") or b.get("powerInfo") or {}
+    power = round(_num(power_info.get("PowerConsumed")))
+    if power > 0:
+        meta["power_mw"] = power
+    outputs = [
+        str(o.get("Name") or o.get("item") or "") for o in b.get("production", []) or []
     ]
-    for feature_type, entries in typed:
-        for i, b in enumerate(entries):
-            name = str(b.get("Name") or "Factory")
-            meta: dict[str, str | float | int] = {"kind": _slug(name)}
-            # Class + yaw let the frontend draw the building's real footprint
-            # outline (SCIM detailed models are keyed by short UE class name).
-            class_name = str(b.get("ClassName") or "")
-            if class_name:
-                meta["class_name"] = class_name
-            loc = b.get("location") or b.get("Location") or {}
-            if isinstance(loc, dict) and loc.get("rotation") is not None:
-                meta["rotation"] = _num(loc.get("rotation"))
-            meta["status"] = _building_status(b)
-            power_info = b.get("PowerInfo") or b.get("powerInfo") or {}
-            power = round(_num(power_info.get("PowerConsumed")))
-            if power > 0:
-                meta["power_mw"] = power
-            outputs = [
-                str(o.get("Name") or o.get("item") or "") for o in b.get("production", []) or []
-            ]
-            outputs = [o for o in outputs if o]
-            if outputs:
-                meta["produces"] = ", ".join(dict.fromkeys(outputs))
-            features.append(
-                MapFeature(
-                    id=_slug(f"{feature_type}-{b.get('ID', i)}"),
-                    type=feature_type,
-                    name=name,
-                    position=_location(b),
-                    meta=meta,
-                )
-            )
-    return features
+    outputs = [o for o in outputs if o]
+    if outputs:
+        meta["produces"] = ", ".join(dict.fromkeys(outputs))
+    return meta
+
+
+def _building_feature(feature_type: FeatureType, index: int, b: Raw) -> MapFeature:
+    """Build one building map feature (factory / power_plant marker)."""
+    name = str(b.get("Name") or "Factory")
+    return MapFeature(
+        id=_slug(f"{feature_type}-{b.get('ID', index)}"),
+        type=feature_type,
+        name=name,
+        position=_location(b),
+        meta=_building_meta(b, name),
+    )
+
+
+def _building_features(
+    factory_raw: Iterable[Raw],
+    generators_raw: Iterable[Raw],
+    extractor_raw: Iterable[Raw] = (),
+) -> list[MapFeature]:
+    """Production/extraction buildings (``factory``) and generators (``power_plant``).
+
+    Miners and oil/water/well extractors come from FRM's ``getExtractor`` feed and
+    render as ``factory`` markers alongside manufacturers. Every building is its
+    own map feature — the id must be unique per building (FRM ``ID`` when present,
+    else the enumeration index) so same-class buildings don't collide into one
+    marker.
+    """
+    typed: list[tuple[FeatureType, list[Raw]]] = [
+        ("factory", [*factory_raw, *extractor_raw]),
+        ("power_plant", list(generators_raw)),
+    ]
+    return [
+        _building_feature(feature_type, i, b)
+        for feature_type, entries in typed
+        for i, b in enumerate(entries)
+    ]
 
 
 def normalize_world(
@@ -361,14 +447,16 @@ def normalize_world(
     cables_raw: Iterable[Raw] | None = None,
     pipes_raw: Iterable[Raw] | None = None,
     generators_raw: Iterable[Raw] | None = None,
+    extractor_raw: Iterable[Raw] | None = None,
     source: str = "frm",
 ) -> WorldSnapshot:
     """Build a world snapshot from FRM players / factories / resource nodes.
 
     Pickups are optional: *artifacts_raw* (Somersloops/Mercer Spheres) and
     *slugs_raw* (power slugs) render as artifacts; *drop_pods_raw* as crash-site
-    wrecks. *generators_raw* render as ``power_plant`` buildings; *belts_raw* /
-    *cables_raw* / *pipes_raw* become the belt / power-line / pipeline path
+    wrecks. *generators_raw* render as ``power_plant`` buildings; *extractor_raw*
+    (miners, oil/water/well extractors) render as ``factory`` markers; *belts_raw*
+    / *cables_raw* / *pipes_raw* become the belt / power-line / pipeline path
     layers. FRM 1.5.x exposes no endpoint for wild food or foundations, so
     those stay empty on live data.
     """
@@ -381,7 +469,7 @@ def normalize_world(
         )
         for i, p in enumerate(players_raw, start=1)
     ]
-    features = _building_features(factory_raw, generators_raw or [])
+    features = _building_features(factory_raw, generators_raw or [], extractor_raw or [])
     for node in nodes_raw:
         base = str(node.get("Name") or node.get("ResourceForm") or "Node")
         purity = str(node.get("Purity") or "normal").lower()
@@ -393,7 +481,7 @@ def normalize_world(
                 # meta for the purity filter; ``resource`` stays the base slug so
                 # the resource filter still groups nodes regardless of purity.
                 id=_slug(f"{base}-{node.get('ID', len(features))}"),
-                type=_NODE_FEATURE_TYPE.get(resource, "resource_node"),
+                type=_node_feature_type(node, resource),
                 name=f"{base} ({purity.capitalize()})",
                 position=_location(node),
                 meta={"resource": resource, "purity": purity},

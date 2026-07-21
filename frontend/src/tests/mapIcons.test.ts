@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { MapFeature } from '../types/world';
-import { COLLECTED_OPACITY, featureIcon, PURITY_COLOR } from '../utils/mapIcons';
+import {
+  COLLECTED_OPACITY,
+  FEATURE_COLOR,
+  featureIcon,
+  PURITY_COLOR,
+  swatchColor,
+} from '../utils/mapIcons';
 import { SCIM_LAYER_BY_ID } from '../utils/scimLayers';
 
 const feature = (partial: Partial<MapFeature>): MapFeature => ({
@@ -38,6 +44,22 @@ describe('featureIcon (SCIM pin style)', () => {
     const markup = html(feature({ type: 'artifact', meta: { kind: 'somersloop' } }));
     expect(markup).toContain(String(sloop?.outsideColor));
     expect(markup).toContain(String(sloop?.icon));
+  });
+
+  it('rings a painted building with its swatch color instead of the type color', () => {
+    const painted = feature({ type: 'factory', meta: { kind: 'miner', color: '#e61a1a' } });
+    const markup = html(painted);
+    // The swatch color paints the ring/anchor; the default factory color does not.
+    expect(markup).toContain('#e61a1a');
+    expect(markup).not.toContain(FEATURE_COLOR.factory);
+    // Unpainted buildings fall back to the per-type color.
+    expect(html(feature({ type: 'factory', meta: {} }))).toContain(FEATURE_COLOR.factory);
+  });
+
+  it('swatchColor validates the hex and ignores anything else', () => {
+    expect(swatchColor(feature({ meta: { color: '#1e88e5' } }))).toBe('#1e88e5');
+    expect(swatchColor(feature({ meta: { color: 'blue' } }))).toBeNull();
+    expect(swatchColor(feature({ meta: {} }))).toBeNull();
   });
 
   it('dims collected pickups and occupied nodes to SCIM opacity', () => {

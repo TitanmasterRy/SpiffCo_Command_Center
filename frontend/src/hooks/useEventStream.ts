@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { WsClient } from '../api/ws';
+import { useAuthStore } from '../stores/authStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import type { WsEnvelope } from '../types/api';
 
@@ -12,10 +13,12 @@ import type { WsEnvelope } from '../types/api';
 export function useEventStream(topics: string[], onMessage?: (message: WsEnvelope) => void): void {
   const setWsStatus = useConnectionStore((state) => state.setWsStatus);
   const markHeartbeat = useConnectionStore((state) => state.markHeartbeat);
+  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
     const client = new WsClient({
       topics,
+      token,
       onStatusChange: setWsStatus,
       onMessage: (message) => {
         if (message.topic === 'system.heartbeat') markHeartbeat();
@@ -24,7 +27,8 @@ export function useEventStream(topics: string[], onMessage?: (message: WsEnvelop
     });
     client.connect();
     return () => client.close();
-    // Topics are compared by value so callers can pass inline arrays.
+    // Topics are compared by value so callers can pass inline arrays; reconnect
+    // when the session token changes (login/logout).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(topics)]);
+  }, [JSON.stringify(topics), token]);
 }

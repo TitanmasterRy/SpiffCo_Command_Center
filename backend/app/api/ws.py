@@ -28,11 +28,34 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.config.settings import get_settings
+from app.database.engine import get_session_factory
+from app.errors import UnauthorizedError
+from app.services.auth import AuthService
 from app.services.event_bus import EventBus, Subscription
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+async def _authorize(websocket: WebSocket) -> bool:
+    """Reject the handshake when auth is enabled and the token is missing/invalid.
+
+    Browsers can't set headers on a WebSocket, so the session token is passed as
+    a ``?token=`` query parameter. Returns True when the connection may proceed.
+    """
+    if not get_settings().auth_enabled:
+        return True
+    auth: AuthService = websocket.app.state.auth
+    token = websocket.query_params.get("token", "")
+    try:
+        async with get_session_factory()() as session:
+            await auth.load_active_user(session, token)
+    except UnauthorizedError:
+        await websocket.close(code=1008)  # policy violation
+        return False
+    return True
 
 
 def _envelope(topic: str, payload: Any) -> str:
@@ -56,6 +79,8 @@ async def _forward_events(websocket: WebSocket, subscription: Subscription) -> N
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     """Accept a client and serve the subscribe/ping protocol described above."""
+    if not await _authorize(websocket):
+        return
     bus: EventBus = websocket.app.state.event_bus
     await websocket.accept()
 

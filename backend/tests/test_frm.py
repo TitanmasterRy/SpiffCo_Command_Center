@@ -47,6 +47,11 @@ FRM_TRAIN = [
     {"Name": "Freight 1", "location": {"x": 10, "y": 10, "z": 0}, "TrainStation": "Central"},
 ]
 
+FRM_EXTRACTOR = [
+    {"ID": "M_1", "Name": "Miner Mk.2", "location": {"x": 5, "y": 6, "z": 0},
+     "ColorSlot": {"PrimaryColor": {"R": 0.12, "G": 0.53, "B": 0.90}}},
+]
+
 _ROUTES = {
     "getPower": FRM_POWER,
     "getFactory": FRM_FACTORY,
@@ -54,6 +59,7 @@ _ROUTES = {
     "getResourceNode": FRM_NODE,
     "getTrainStation": FRM_STATION,
     "getTrains": FRM_TRAIN,
+    "getExtractor": FRM_EXTRACTOR,
 }
 
 
@@ -160,6 +166,32 @@ def test_normalize_world_reclassifies_geysers_and_wells() -> None:
     assert wells == {"nitrogen-gas", "water"}
 
 
+def test_normalize_world_splits_oil_wells_from_oil_nodes() -> None:
+    """Crude oil well satellites classify as wells; surface oil stays a node.
+
+    Regression guard: classification by resource name alone lumped oil well
+    satellites into the resource-node layer, breaking the map's well filter.
+    """
+    nodes = [
+        {"Name": "Crude Oil", "location": {"x": 1, "y": 1, "z": 0}, "Purity": "Pure"},
+        {
+            "Name": "Crude Oil",
+            "NodeType": "Fracking Satellite",
+            "location": {"x": 2, "y": 2, "z": 0},
+            "Purity": "Impure",
+        },
+        {
+            "Name": "Crude Oil",
+            "ClassName": "BP_FrackingCore_C",
+            "location": {"x": 3, "y": 3, "z": 0},
+            "Purity": "Normal",
+        },
+    ]
+    world = normalize.normalize_world(FRM_PLAYER, [], nodes)
+    types = [f.type for f in world.features if f.meta.get("resource") == "crude-oil"]
+    assert types == ["resource_node", "resource_well", "resource_well"]
+
+
 def test_normalize_world_buildings_get_unique_ids_and_meta() -> None:
     """Every building is its own feature: same-class buildings must not collide.
 
@@ -172,6 +204,47 @@ def test_normalize_world_buildings_get_unique_ids_and_meta() -> None:
     assert len({f.id for f in factories}) == 3  # all distinct
     smelter = factories[0]
     assert smelter.meta["produces"] == "Iron Ingot"
+
+
+def test_color_to_hex_accepts_frm_shapes() -> None:
+    """FRM paint colors parse from hex strings, RGB objects, and RGB lists."""
+    assert normalize._color_to_hex("#1e88e5") == "#1e88e5"
+    assert normalize._color_to_hex("1E88E5FF") == "#1e88e5"  # RRGGBBAA, hash-less
+    # 0–1 float channels (FRM's LinearColor) and 0–255 ints both work.
+    assert normalize._color_to_hex({"R": 1.0, "G": 0.0, "B": 0.0}) == "#ff0000"
+    assert normalize._color_to_hex({"r": 0, "g": 128, "b": 255}) == "#0080ff"
+    assert normalize._color_to_hex([0, 255, 0]) == "#00ff00"
+    assert normalize._color_to_hex("not-a-color") is None
+    assert normalize._color_to_hex(None) is None
+
+
+def test_swatch_hex_reads_paint_fields() -> None:
+    """Swatch color is read from ColorSlot / PrimaryColor / Color, else None."""
+    assert normalize._swatch_hex({"ColorSlot": {"PrimaryColor": {"R": 1, "G": 1, "B": 1}}}) == (
+        "#ffffff"
+    )
+    assert normalize._swatch_hex({"PrimaryColor": "#abcdef"}) == "#abcdef"
+    assert normalize._swatch_hex({"Color": [255, 0, 0]}) == "#ff0000"
+    assert normalize._swatch_hex({"Name": "Miner"}) is None
+
+
+def test_normalize_world_extractors_and_swatch_color() -> None:
+    """Extractors render as factory markers; a painted building rings its swatch."""
+    extractors = [
+        {"ID": "M_1", "Name": "Miner Mk.2", "location": {"x": 5, "y": 6, "z": 0},
+         "ColorSlot": {"PrimaryColor": {"R": 0.9, "G": 0.1, "B": 0.1}}},
+        {"ID": "OE_1", "Name": "Oil Extractor", "location": {"x": 7, "y": 8, "z": 0}},
+    ]
+    world = normalize.normalize_world(FRM_PLAYER, FRM_FACTORY, [], extractor_raw=extractors)
+    factories = [f for f in world.features if f.type == "factory"]
+    # 3 manufacturers + 2 extractors, all distinct ids.
+    assert len(factories) == 5
+    assert len({f.id for f in factories}) == 5
+    miner = next(f for f in factories if f.name == "Miner Mk.2")
+    assert miner.meta["color"] == "#e61a1a"
+    # A building the player never painted carries no color (falls back on the UI).
+    unpainted = next(f for f in factories if f.name == "Oil Extractor")
+    assert "color" not in unpainted.meta
 
 
 def test_normalize_world_includes_pickups() -> None:
@@ -227,7 +300,12 @@ async def test_connector_poll_populates_snapshots() -> None:
     snap = provider.snapshot()
     assert snap.source == "frm"
     assert snap.power.produced_mw == 1000
-    assert connector.world_snapshot().players[0].name == "Pioneer"
+    world = connector.world_snapshot()
+    assert world.players[0].name == "Pioneer"
+    # The extractor feed flows through the poll and carries its painted swatch.
+    miner = next(f for f in world.features if f.name == "Miner Mk.2")
+    assert miner.type == "factory"
+    assert miner.meta["color"] == "#1f87e6"
     await connector.stop()
     assert connector.state == ConnectionState.DISCONNECTED
 

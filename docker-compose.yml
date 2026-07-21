@@ -11,6 +11,16 @@ services:
       SPIFFCO_DATABASE_URL: sqlite+aiosqlite:////data/spiffco.db
       # Point at your game machine running the FRM mod:
       SPIFFCO_FRM_BASE_URL: http://host.docker.internal:8080
+      # Admin panel login (PBKDF2 hash, not the password itself; $ doubled for
+      # compose escaping). Regenerate via app.services.admin_auth.hash_password.
+      SPIFFCO_ADMIN_USERNAME: TitanmasterRy
+      SPIFFCO_ADMIN_PASSWORD_HASH: pbkdf2_sha256$$600000$$40dcf582c7ca99ff16556fc7d095b690$$d255cdb2bf7c57f98005f55eb87c2854eb209e3e8c4d311101cc5077df815ede
+      # Fixed signing secret so admin sessions survive backend restarts.
+      SPIFFCO_ADMIN_SESSION_SECRET: 1f865b921f00b0669c83a8edbc2692ffb3dc527601f17f0a82b716d310a6207f
+      # SpiffCoBridge mod on the dedicated server (same machine); token must
+      # match AuthToken in the server's Game.ini.
+      SPIFFCO_ADMIN_COMMAND_URL: http://host.docker.internal:8091
+      SPIFFCO_ADMIN_COMMAND_TOKEN: pfiv4y08q1cxmt6lgorbdzjweu952k7h3asn
     volumes:
       - spiffco-data:/data
     ports:

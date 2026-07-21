@@ -109,6 +109,7 @@ class FrmConnector:
         cables = await self._get_optional("getCables")
         pipes = await self._get_optional("getPipes")
         generators = await self._get_optional("getGenerators")
+        extractors = await self._get_optional("getExtractor")
         self._dashboard = normalize.normalize_dashboard(power, factory)
         self._world = normalize.normalize_world(
             players,
@@ -121,6 +122,7 @@ class FrmConnector:
             cables_raw=cables,
             pipes_raw=pipes,
             generators_raw=generators,
+            extractor_raw=extractors,
         )
         self._logistics = normalize.normalize_logistics(stations, trains)
         self._set_state(ConnectionState.CONNECTED)

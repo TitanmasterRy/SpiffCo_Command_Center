@@ -1,0 +1,30 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "SemVersion": "0.1.0",
+  "FriendlyName": "SpiffCo Bridge",
+  "Description": "Command bridge for the SpiffCo Command Center admin panel. Runs a small authenticated HTTP server inside the game/dedicated server and executes admin actions (cheats) dispatched by the SpiffCo backend. Companion to Ficsit Remote Monitoring: FRM provides read-only telemetry, SpiffCoBridge provides the write path.",
+  "Category": "Modding",
+  "CreatedBy": "SpiffCo",
+  "CreatedByURL": "https://github.com/TitanmasterRy/SpiffCo_Command_Center",
+  "CanContainContent": true,
+  "IsExperimentalVersion": false,
+  "Installed": false,
+  "AcceptsAnyRemoteVersion": true,
+  "RequiredOnRemote": false,
+  "Modules": [
+    {
+      "Name": "SpiffCoBridge",
+      "Type": "Runtime",
+      "LoadingPhase": "PostDefault"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "SML",
+      "SemVersion": "^3.8.0",
+      "Enabled": true
+    }
+  ]
+}
