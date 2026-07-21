@@ -198,26 +198,22 @@ export default function Admin() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold text-slate-100">Admin</h1>
-        {tabs.length > 1 && (
-          <div className="flex gap-1">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                  t.id === active
-                    ? 'bg-accent/10 font-medium text-accent'
-                    : 'text-slate-400 hover:bg-surface-overlay hover:text-slate-200'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        )}
+      <h1 className="text-lg font-semibold text-slate-100">Admin</h1>
+      <div className="inline-flex rounded-lg border border-surface-border bg-surface-raised p-1">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
+              t.id === active
+                ? 'bg-accent text-white'
+                : 'text-slate-300 hover:bg-surface-overlay'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {active === 'cheats' && <CheatsPanel />}

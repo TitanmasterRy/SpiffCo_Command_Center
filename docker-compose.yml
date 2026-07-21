@@ -17,6 +17,10 @@ services:
       SPIFFCO_ADMIN_PASSWORD_HASH: pbkdf2_sha256$$600000$$40dcf582c7ca99ff16556fc7d095b690$$d255cdb2bf7c57f98005f55eb87c2854eb209e3e8c4d311101cc5077df815ede
       # Fixed signing secret so admin sessions survive backend restarts.
       SPIFFCO_ADMIN_SESSION_SECRET: 1f865b921f00b0669c83a8edbc2692ffb3dc527601f17f0a82b716d310a6207f
+      # Require login for the whole site. The owner account is seeded from
+      # SPIFFCO_ADMIN_USERNAME / _PASSWORD_HASH above; new sign-ups start pending
+      # until approved in Admin > Accounts. Set to "false" to run without login.
+      SPIFFCO_AUTH_ENABLED: "true"
       # SpiffCoBridge mod on the dedicated server (same machine); token must
       # match AuthToken in the server's Game.ini.
       SPIFFCO_ADMIN_COMMAND_URL: http://host.docker.internal:8091

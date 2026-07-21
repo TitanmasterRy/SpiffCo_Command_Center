@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { ApiError } from '../api/http';
 import { useAuth, useAuthConfig, useLogin, useRegister } from '../hooks/useAuth';
@@ -9,11 +9,13 @@ const inputClass =
 
 type Mode = 'login' | 'register';
 
+/** Everyone lands on the Dashboard after signing in, regardless of deep link. */
+const LANDING_PATH = '/';
+
 /** Public login / account-request screen shown when authentication is enabled. */
 export default function Login() {
   const config = useAuthConfig();
   const { isAuthenticated, enabled } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
   const login = useLogin();
   const register = useRegister();
@@ -22,11 +24,9 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
-
-  // Already signed in (or login isn't required) — send them into the app.
+  // Already signed in (or login isn't required) — send them to the Dashboard.
   if (isAuthenticated && (enabled ? true : config.isSuccess)) {
-    return <Navigate to={from} replace />;
+    return <Navigate to={LANDING_PATH} replace />;
   }
 
   const allowRegistration = config.data?.allow_registration ?? false;
@@ -35,7 +35,10 @@ export default function Login() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'login') {
-      login.mutate({ username, password }, { onSuccess: () => navigate(from, { replace: true }) });
+      login.mutate(
+        { username, password },
+        { onSuccess: () => navigate(LANDING_PATH, { replace: true }) },
+      );
     } else {
       register.mutate({ username, password });
     }
